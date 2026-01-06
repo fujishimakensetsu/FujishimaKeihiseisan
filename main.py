@@ -118,3 +118,9 @@ async def upload_receipt(file: UploadFile = File(...), user_id: str = Depends(ge
     return {"data": data_list}
 
 # PDF/Excel/Webhookなどはそのまま（認証を追加する場合は Depends(get_current_user) を付与）
+if __name__ == "__main__":
+    import uvicorn
+    # Cloud Runから割り当てられるポート番号を取得（デフォルトは8080）
+    port = int(os.environ.get("PORT", 8080))
+    # 0.0.0.0 で待ち受けることが必須
+    uvicorn.run(app, host="0.0.0.0", port=port)
