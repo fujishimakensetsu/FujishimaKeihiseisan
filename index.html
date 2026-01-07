@@ -81,60 +81,83 @@
 </div>
 
 <script>
-    async function login() {
-        const usernameInput = document.getElementById('username').value;
-        const passwordInput = document.getElementById('password').value;
-        const messageDiv = document.getElementById('message');
-
-        // メッセージをクリア
-        messageDiv.innerText = "";
-
-        if (!usernameInput || !passwordInput) {
-            messageDiv.innerText = "ユーザー名とパスワードを入力してください。";
-            return;
+    // 認証ヘッダーを付与する共通関数
+    async function authFetch(url, options = {}) {
+        const token = localStorage.getItem('sb_token');
+        if (!options.headers) options.headers = {};
+        if (token) {
+            options.headers['Authorization'] = `Bearer ${token}`;
         }
+        
+        const res = await fetch(url, options);
+        if (res.status === 401) {
+            // 認証切れならログイン画面を表示
+            showLogin();
+            throw new Error('Unauthorized');
+        }
+        return res;
+    }
 
+    // ログイン画面を表示する関数
+    function showLogin() {
+        document.getElementById('loginOverlay').style.display = 'flex';
+    }
+
+    // ログイン画面を隠す関数
+    function hideLogin() {
+        document.getElementById('loginOverlay').style.display = 'none';
+    }
+
+    async function handleLogin() {
+        const username = document.getElementById('loginId').value; // 'id' を 'username' に変更（念のため）
+        const password = document.getElementById('loginPw').value;
+        
         try {
-            const response = await fetch('/login', {
+            const res = await fetch('/login', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    username: usernameInput,
-                    password: passwordInput
-                })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password }) // キー名をバックエンドに合わせて調整
             });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                // --- トークンの保存と画面遷移 ---
+            
+            if (res.ok) {
+                const data = await res.json();
+                localStorage.setItem('sb_token', data.token);
                 
-                // 1. サーバーから返ってきたトークンをブラウザのLocalStorageに保存
-                localStorage.setItem('access_token', data.token);
+                // クラス追加ではなく、直接スタイルを 'none' にして確実に消す
+                hideLogin();
                 
-                // 2. メインページ（/main）へ移動
-                // ※main.pyで定義しているメイン画面のパスに合わせてください
-                window.location.href = '/main'; 
-                
+                // データ同期
+                await sync();
             } else {
-                // エラーメッセージの表示
-                messageDiv.innerText = data.detail || "ログインに失敗しました。";
+                alert("ログインに失敗しました。ユーザー名とパスワードを確認してください。");
             }
-        } catch (error) {
-            console.error('Error:', error);
-            messageDiv.innerText = "サーバーとの通信に失敗しました。";
+        } catch (e) {
+            console.error(e);
+            alert("通信エラーが発生しました。");
         }
     }
 
-    // Enterキーでもログインできるように設定
-    document.addEventListener('keypress', function (e) {
-        if (e.key === 'Enter') {
-            login();
+    async function sync() {
+        try {
+            const res = await authFetch('/api/status');
+            const data = await res.json();
+            console.log("データ取得成功:", data);
+            
+            // ここでデータの描画処理を行う
+            // ... (既存の描画ロジック) ...
+            
+            hideLogin();
+        } catch (e) {
+            showLogin();
         }
-    });
-</script>
+    }
 
-</body>
-</html>
+    // 起動時のチェック
+    window.onload = () => {
+        if (localStorage.getItem('sb_token')) {
+            sync();
+        } else {
+            showLogin();
+        }
+    };
+</script>
