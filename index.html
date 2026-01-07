@@ -5,73 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SmartBuilder AI - ログイン</title>
     <style>
-        body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f0f2f5;
-        }
-        .login-container {
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 350px;
-            text-align: center;
-        }
-        h1 {
-            font-size: 24px;
-            margin-bottom: 8px;
-            color: #1c1e21;
-        }
-        p {
-            color: #606770;
-            margin-bottom: 24px;
-        }
-        input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 16px;
-            border: 1px solid #dddfe2;
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
-        input:focus {
-            outline: none;
-            border-color: #1877f2;
-            box-shadow: 0 0 0 2px #e7f3ff;
-        }
-        button {
-            width: 100%;
-            padding: 12px;
-            background-color: #1877f2;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        button:hover {
-            background-color: #166fe5;
-        }
-        #message {
-            color: #fa3e3e;
-            font-size: 14px;
-            margin-top: 16px;
-            min-height: 1em;
-        }
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f0f2f5; }
+        .login-container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); width: 100%; max-width: 350px; text-align: center; }
+        /* ログイン後に隠すための設定 */
+        .hidden { display: none !important; }
+        h1 { font-size: 24px; color: #1c1e21; }
+        input { width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid #dddfe2; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background-color: #1877f2; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        #message { color: #fa3e3e; margin-top: 16px; }
     </style>
 </head>
 <body>
 
-<div class="login-container">
+<div id="loginOverlay" class="login-container">
     <h1>SmartBuilder AI</h1>
     <p>ログインして開始してください</p>
     <input type="text" id="username" placeholder="ユーザー名" required>
@@ -81,18 +27,14 @@
 </div>
 
 <script>
+    // 認証ヘッダー付き通信
     async function authFetch(url, options = {}) {
         const token = localStorage.getItem('sb_token');
-        console.log("authFetch実行中... トークン:", token ? "あり" : "なし");
-        
         if (!options.headers) options.headers = {};
-        if (token) {
-            options.headers['Authorization'] = `Bearer ${token}`;
-        }
+        if (token) options.headers['Authorization'] = `Bearer ${token}`;
         
         const res = await fetch(url, options);
         if (res.status === 401) {
-            console.error("認証エラー(401)が発生しました");
             showLogin();
             throw new Error('Unauthorized');
         }
@@ -100,75 +42,63 @@
     }
 
     function showLogin() {
-        const overlay = document.getElementById('loginOverlay');
-        if (overlay) overlay.style.setProperty('display', 'flex', 'important');
+        document.getElementById('loginOverlay').classList.remove('hidden');
     }
 
     function hideLogin() {
-        console.log("hideLoginを実行します。オーバーレイを非表示にします。");
-        const overlay = document.getElementById('loginOverlay');
-        if (overlay) {
-            // classList ではなく、直接 style を書き換えることで CSS の未定義問題を回避します
-            overlay.style.setProperty('display', 'none', 'important');
-            console.log("オーバーレイの display を none に設定しました。");
-        } else {
-            console.error("エラー: loginOverlay という ID が見つかりません。");
-        }
+        console.log("ログイン画面を非表示にします");
+        document.getElementById('loginOverlay').classList.add('hidden');
     }
 
-    async function handleLogin() {
-        console.log("ログインボタンが押されました");
-        const id = document.getElementById('loginId').value;
-        const password = document.getElementById('loginPw').value;
+    // 関数名を HTMLのonclickと一致させました
+    async function login() {
+        console.log("ログイン処理開始");
+        const userVal = document.getElementById('username').value;
+        const passVal = document.getElementById('password').value;
         
         try {
             const res = await fetch('/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: id, password: password })
+                body: JSON.stringify({ username: userVal, password: passVal })
             });
             
             if (res.ok) {
                 const data = await res.json();
-                console.log("ログイン成功。受信トークン:", data.token);
+                console.log("ログイン成功、トークン保存");
                 localStorage.setItem('sb_token', data.token);
                 
-                // 描画処理(sync)の前にまず隠す
+                // 画面を切り替える（隠す）
                 hideLogin();
+                
+                // 以前の指示通り /main に移動させたい場合は以下のコメントアウトを外してください
+                // window.location.href = '/main';
+                
                 await sync();
             } else {
-                const errorData = await res.json();
-                console.warn("ログイン失敗:", errorData);
-                alert("ログインに失敗しました: " + (errorData.detail || "不明なエラー"));
+                alert("ログインに失敗しました");
             }
         } catch (e) {
-            console.error("通信エラー:", e);
+            console.error("エラー:", e);
         }
     }
 
     async function sync() {
-        console.log("データ同期(sync)を開始します");
         try {
             const res = await authFetch('/api/status');
             const data = await res.json();
             console.log("データ取得完了:", data);
-
-            // ここに以前の描画処理（HTMLの生成など）があるはずです。
-            // もし描画処理の中でエラーが起きても、hideLoginは既に実行されているはずです。
-            
             hideLogin(); 
         } catch (e) {
-            console.error("sync中にエラー発生:", e);
             showLogin();
         }
     }
 
     window.onload = () => {
-        console.log("ページが読み込まれました");
         if (localStorage.getItem('sb_token')) {
             sync();
-        } else {
-            showLogin();
         }
     };
 </script>
+</body>
+</html>
