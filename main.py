@@ -1,15 +1,15 @@
 import os, time, json, shutil, io
 from datetime import datetime, timedelta
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Request, Depends, status
-from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.security import OAuth2PasswordBearer
 import google.generativeai as genai
 from dotenv import load_dotenv
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-# --- LINE Bot 用 ---
+# --- Firestore / LINE 用インポート ---
+from google.cloud import firestore
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, ImageMessage, TextSendMessage
@@ -27,28 +27,21 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 model = genai.GenerativeModel('gemini-2.5-pro')
 
 # LINE 設定
-LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
-LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
-line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
-handler = WebhookHandler(LINE_CHANNEL_SECRET)
+line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
+handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
+
+# --- Firestore 初期化 ---
+db = firestore.Client()
+# コレクション名定義
+COL_RECORDS = "records"
+COL_USERS = "users"
 
 app = FastAPI()
-UPLOAD_DIR, DB_FILE, USERS_FILE = "uploads", "records.json", "users.json"
+UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
-# --- ユーティリティ ---
-def load_json(path):
-    if not os.path.exists(path): return [] if "records" in path else {}
-    with open(path, "r", encoding="utf-8") as f:
-        content = f.read()
-        return json.loads(content) if content else ([] if "records" in path else {})
-
-def save_json(path, data):
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-
-# --- 認証 ---
+# --- 認証ロジック ---
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -65,12 +58,16 @@ async def get_current_user(request: Request):
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-# --- 初期設定 ---
+# --- 初期ユーザー作成 (Firestore版) ---
 def init_admin():
-    users = load_json(USERS_FILE)
-    if "admin" not in users:
-        users["admin"] = {"password": pwd_context.hash("password"), "plan": "premium", "limit": 100, "used": 0}
-        save_json(USERS_FILE, users)
+    user_ref = db.collection(COL_USERS).document("admin")
+    if not user_ref.get().exists:
+        user_ref.set({
+            "password": pwd_context.hash("password"),
+            "plan": "premium",
+            "limit": 100,
+            "used": 0
+        })
 init_admin()
 
 # 解析プロンプト
@@ -85,16 +82,26 @@ async def index():
 
 @app.post("/login")
 async def login(data: dict):
-    users = load_json(USERS_FILE)
     u_id = data.get("id") or data.get("username")
-    if u_id in users and pwd_context.verify(data.get("password"), users[u_id]["password"]):
-        return {"token": create_access_token(data={"sub": u_id})}
+    user_ref = db.collection(COL_USERS).document(u_id).get()
+    
+    if user_ref.exists:
+        user_data = user_ref.to_dict()
+        if pwd_context.verify(data.get("password"), user_data["password"]):
+            return {"token": create_access_token(data={"sub": u_id})}
     raise HTTPException(status_code=401, detail="認証失敗")
 
 @app.get("/api/status")
 async def get_status(u_id: str = Depends(get_current_user)):
-    # 常に最新の records.json を返す
-    return {"records": load_json(DB_FILE), "users": load_json(USERS_FILE)}
+    # Firestore から全レコード取得 (日付順)
+    recs_query = db.collection(COL_RECORDS).order_by("date", direction=firestore.Query.DESCENDING).stream()
+    records = [doc.to_dict() for doc in recs_query]
+    
+    # 全ユーザー情報取得
+    users_query = db.collection(COL_USERS).stream()
+    users = {doc.id: doc.to_dict() for doc in users_query}
+    
+    return {"records": records, "users": users}
 
 @app.post("/upload")
 async def upload_receipt(file: UploadFile = File(...), u_id: str = Depends(get_current_user)):
@@ -106,11 +113,21 @@ async def upload_receipt(file: UploadFile = File(...), u_id: str = Depends(get_c
     response = model.generate_content([genai_file, PROMPT])
     
     data_list = json.loads(response.text.strip().replace('```json', '').replace('```', ''))
-    records = load_json(DB_FILE)
+    
+    # Firestore への保存
     for item in (data_list if isinstance(data_list, list) else [data_list]):
-        item.update({"image_url": f"/uploads/{file.filename}", "id": int(time.time()*1000)})
-        records.append(item)
-    save_json(DB_FILE, records)
+        doc_id = str(int(time.time()*1000))
+        item.update({
+            "image_url": f"/uploads/{file.filename}",
+            "id": doc_id,
+            "created_at": firestore.SERVER_TIMESTAMP,
+            "owner": u_id
+        })
+        db.collection(COL_RECORDS).document(doc_id).set(item)
+    
+    # ユーザーの使用数カウントアップ
+    db.collection(COL_USERS).document(u_id).update({"used": firestore.Increment(1)})
+    
     return {"data": data_list}
 
 # --- LINE Webhook ---
@@ -139,16 +156,20 @@ def handle_image(event):
     try:
         data_text = response.text.strip().replace('```json', '').replace('```', '')
         data_list = json.loads(data_text)
-        records = load_json(DB_FILE)
         
         reply_txt = "【解析成功】\n"
         for item in (data_list if isinstance(data_list, list) else [data_list]):
-            # Web版と同じ形式でデータを補完して records.json に追加
-            item.update({"image_url": f"/uploads/{fname}", "id": int(time.time()*1000)})
-            records.append(item)
+            doc_id = str(int(time.time()*1000))
+            item.update({
+                "image_url": f"/uploads/{fname}",
+                "id": doc_id,
+                "created_at": firestore.SERVER_TIMESTAMP,
+                "owner": "admin"
+            })
+            db.collection(COL_RECORDS).document(doc_id).set(item)
             reply_txt += f"📅 {item.get('date')}\n🏢 {item.get('vendor_name')}\n💰 ¥{item.get('total_amount'):,}\n"
         
-        save_json(DB_FILE, records)
+        db.collection(COL_USERS).document("admin").update({"used": firestore.Increment(1)})
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_txt))
     except Exception as e:
         line_bot_api.reply_message(event.reply_token, TextSendMessage(text="解析データの保存に失敗しました。"))
