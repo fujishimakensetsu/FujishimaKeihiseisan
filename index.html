@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartBuilder AI</title>
+    <title>SmartBuilder AI - 領収書解析</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 直接 display:none を指定するクラスを定義 */
-        .hidden-custom { display: none !important; }
+        .hidden { display: none !important; }
     </style>
 </head>
-<body class="bg-slate-50">
+<body class="bg-slate-50 min-h-screen">
 
     <div id="loginOverlay" class="fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center p-6">
         <div class="bg-white w-full max-w-md p-10 rounded-[2.5rem] shadow-2xl">
@@ -21,113 +20,136 @@
                 <input type="password" id="password" placeholder="パスワード" class="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <button onclick="login()" class="w-full bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-blue-600 transition-all">ログイン</button>
             </div>
-            <div id="message" class="text-red-500 mt-4 text-center font-bold"></div>
+            <div id="loginMessage" class="text-red-500 mt-4 text-center"></div>
         </div>
     </div>
 
-    <div id="mainContent" class="p-8">
-        <div class="max-w-4xl mx-auto">
-            <header class="flex justify-between items-center mb-8">
-                <h1 class="text-2xl font-bold text-slate-800">管理パネル</h1>
-                <button onclick="logout()" class="text-slate-500 hover:text-red-500">ログアウト</button>
-            </header>
-            <div id="statusBoard" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white p-6 rounded-3xl shadow-sm">読み込み中...</div>
+    <div id="mainContent" class="max-w-4xl mx-auto p-8">
+        <header class="flex justify-between items-center mb-10">
+            <h1 class="text-3xl font-black text-slate-800">領収書解析スキャン</h1>
+            <button onclick="logout()" class="text-slate-400 hover:text-red-500 font-medium">ログアウト</button>
+        </header>
+
+        <div class="bg-white p-8 rounded-[2rem] shadow-sm mb-8">
+            <h2 class="text-lg font-bold mb-4">領収書をアップロード</h2>
+            <div class="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-10 bg-slate-50">
+                <input type="file" id="receiptFile" class="mb-4">
+                <button onclick="uploadReceipt()" id="uploadBtn" class="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all">解析を実行する</button>
+            </div>
+            <div id="uploadStatus" class="mt-4 text-center text-blue-600 font-medium"></div>
+        </div>
+
+        <div id="resultArea" class="space-y-4">
+            <h2 class="text-xl font-bold text-slate-800 mb-4">解析結果</h2>
+            <div id="recordsList" class="grid gap-4">
+                <p class="text-slate-400">まだデータがありません。領収書をスキャンしてください。</p>
             </div>
         </div>
     </div>
 
-<script>
-    // 1. 通信用の共通関数
-    async function authFetch(url, options = {}) {
-        const token = localStorage.getItem('sb_token');
-        if (!options.headers) options.headers = {};
-        if (token) options.headers['Authorization'] = `Bearer ${token}`;
-        
-        const res = await fetch(url, options);
-        if (res.status === 401) {
-            showLogin();
-            throw new Error('Unauthorized');
+    <script>
+        // 共通：認証付き通信
+        async function authFetch(url, options = {}) {
+            const token = localStorage.getItem('sb_token');
+            if (!options.headers) options.headers = {};
+            if (token) options.headers['Authorization'] = `Bearer ${token}`;
+            const res = await fetch(url, options);
+            if (res.status === 401) {
+                showLogin();
+                throw new Error('Unauthorized');
+            }
+            return res;
         }
-        return res;
-    }
 
-    function showLogin() {
-        document.getElementById('loginOverlay').classList.remove('hidden-custom');
-    }
+        function showLogin() { document.getElementById('loginOverlay').classList.remove('hidden'); }
+        function hideLogin() { document.getElementById('loginOverlay').classList.add('hidden'); }
 
-    function hideLogin() {
-        console.log("hideLoginを実行: 画面を隠します");
-        const overlay = document.getElementById('loginOverlay');
-        overlay.classList.add('hidden-custom');
-    }
-
-    // 2. ログイン実行関数
-    async function login() {
-        const u = document.getElementById('username').value;
-        const p = document.getElementById('password').value;
-        const msg = document.getElementById('message');
-        
-        msg.innerText = "認証中...";
-
-        try {
+        // ログイン処理
+        async function login() {
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
             const res = await fetch('/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                // main.py の data.get("id") に合わせて送信
                 body: JSON.stringify({ id: u, password: p })
             });
-            
             if (res.ok) {
                 const data = await res.json();
                 localStorage.setItem('sb_token', data.token);
-                console.log("ログイン成功");
                 hideLogin();
-                await sync();
+                await loadStatus();
             } else {
-                msg.innerText = "IDまたはパスワードが違います";
+                document.getElementById('loginMessage').innerText = "IDまたはパスワードが正しくありません";
             }
-        } catch (e) {
-            msg.innerText = "サーバーと通信できませんでした";
         }
-    }
 
-    // 3. データ同期関数
-    async function sync() {
-        try {
-            const res = await authFetch('/api/status');
-            const data = await res.json();
-            
-            // 画面の書き換え（例）
-            document.getElementById('statusBoard').innerHTML = `
-                <div class="bg-white p-6 rounded-3xl shadow-sm">
-                    <p class="text-slate-500 text-sm">登録レコード</p>
-                    <p class="text-3xl font-black">${data.records.length} 件</p>
-                </div>
-                <div class="bg-white p-6 rounded-3xl shadow-sm">
-                    <p class="text-slate-500 text-sm">ユーザー数</p>
-                    <p class="text-3xl font-black">${Object.keys(data.users).length} 名</p>
-                </div>
-            `;
-            hideLogin();
-        } catch (e) {
-            showLogin();
+        // 領収書アップロードと解析
+        async function uploadReceipt() {
+            const fileInput = document.getElementById('receiptFile');
+            const status = document.getElementById('uploadStatus');
+            const btn = document.getElementById('uploadBtn');
+
+            if (!fileInput.files[0]) return alert("ファイルを選択してください");
+
+            status.innerText = "Geminiが解析中...";
+            btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            try {
+                // main.py の /upload エンドポイントを呼び出す
+                const res = await authFetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await res.json();
+                
+                status.innerText = "解析完了！";
+                alert("解析に成功しました");
+                await loadStatus(); // リストを更新
+            } catch (e) {
+                status.innerText = "エラーが発生しました";
+                console.error(e);
+            } finally {
+                btn.disabled = false;
+            }
         }
-    }
 
-    function logout() {
-        localStorage.removeItem('sb_token');
-        location.reload();
-    }
-
-    // 起動時にトークンの有無を確認
-    window.onload = () => {
-        if (localStorage.getItem('sb_token')) {
-            sync();
-        } else {
-            showLogin();
+        // データの読み込み
+        async function loadStatus() {
+            try {
+                const res = await authFetch('/api/status');
+                const data = await res.json();
+                const list = document.getElementById('recordsList');
+                
+                if (data.records.length > 0) {
+                    list.innerHTML = data.records.map(r => `
+                        <div class="bg-white p-6 rounded-2xl shadow-sm flex justify-between items-center">
+                            <div>
+                                <p class="text-sm text-slate-400">${r.date}</p>
+                                <p class="font-bold text-slate-800">${r.vendor_name}</p>
+                            </div>
+                            <p class="text-xl font-black text-blue-600">¥${r.total_amount.toLocaleString()}</p>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) { console.error(e); }
         }
-    };
-</script>
+
+        function logout() {
+            localStorage.removeItem('sb_token');
+            location.reload();
+        }
+
+        window.onload = () => {
+            if (localStorage.getItem('sb_token')) {
+                hideLogin();
+                loadStatus();
+            } else {
+                showLogin();
+            }
+        };
+    </script>
 </body>
 </html>
