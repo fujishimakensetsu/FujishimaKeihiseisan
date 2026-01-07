@@ -79,7 +79,8 @@ async def index():
 @app.post("/login")
 async def login(data: dict):
     users = load_json(USERS_FILE)
-    user_id = data.get("id")
+    # "id" または "username" のどちらでも受け取れるようにします
+    user_id = data.get("id") or data.get("username")
     password = data.get("password")
     
     if user_id in users and pwd_context.verify(password, users[user_id]["password"]):

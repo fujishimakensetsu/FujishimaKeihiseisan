@@ -3,102 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartBuilder AI - ログイン</title>
-    <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f0f2f5; }
-        .login-container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); width: 100%; max-width: 350px; text-align: center; }
-        /* ログイン後に隠すための設定 */
+    <title>SmartBuilder AI</title>
+    <script src="https://cdn.tailwindcss.com"></script> <style>
+        /* 【重要】これがないと classList.add('hidden') が効きません */
         .hidden { display: none !important; }
-        h1 { font-size: 24px; color: #1c1e21; }
-        input { width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid #dddfe2; border-radius: 6px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background-color: #1877f2; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        #message { color: #fa3e3e; margin-top: 16px; }
     </style>
 </head>
-<body>
+<body class="bg-slate-50">
 
-<div id="loginOverlay" class="login-container">
-    <h1>SmartBuilder AI</h1>
-    <p>ログインして開始してください</p>
-    <input type="text" id="username" placeholder="ユーザー名" required>
-    <input type="password" id="password" placeholder="パスワード" required>
-    <button onclick="login()">ログイン</button>
-    <div id="message"></div>
-</div>
+    <div id="loginOverlay" class="fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center p-6">
+        <div class="bg-white w-full max-w-md p-10 rounded-[2.5rem] shadow-2xl">
+            <h2 class="text-3xl font-black text-slate-800 mb-2">SmartBuilder AI</h2>
+            <p class="text-slate-500 mb-8 font-medium">ログインして開始してください</p>
+            <div class="space-y-4">
+                <input type="text" id="loginId" placeholder="ユーザーID" class="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="password" id="loginPw" placeholder="パスワード" class="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <button onclick="handleLogin()" class="w-full bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-blue-600 transition-all">ログイン</button>
+            </div>
+        </div>
+    </div>
 
-<script>
-    // 認証ヘッダー付き通信
-    async function authFetch(url, options = {}) {
-        const token = localStorage.getItem('sb_token');
-        if (!options.headers) options.headers = {};
-        if (token) options.headers['Authorization'] = `Bearer ${token}`;
-        
-        const res = await fetch(url, options);
-        if (res.status === 401) {
-            showLogin();
-            throw new Error('Unauthorized');
-        }
-        return res;
-    }
+    <div id="mainContent" class="p-8">
+        <h1 class="text-2xl font-bold">ログイン成功！</h1>
+        <p>ここにアプリのメイン機能を記述します。</p>
+        <div id="dataDisplay" class="mt-4 p-4 bg-white rounded shadow">
+            データ読み込み中...
+        </div>
+        <button onclick="logout()" class="mt-4 text-red-500 underline">ログアウト</button>
+    </div>
 
-    function showLogin() {
-        document.getElementById('loginOverlay').classList.remove('hidden');
-    }
-
-    function hideLogin() {
-        console.log("ログイン画面を非表示にします");
-        document.getElementById('loginOverlay').classList.add('hidden');
-    }
-
-    // 関数名を HTMLのonclickと一致させました
-    async function login() {
-        console.log("ログイン処理開始");
-        const userVal = document.getElementById('username').value;
-        const passVal = document.getElementById('password').value;
-        
-        try {
-            const res = await fetch('/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: userVal, password: passVal })
-            });
+    <script>
+        // 1. 認証付き通信
+        async function authFetch(url, options = {}) {
+            const token = localStorage.getItem('sb_token');
+            if (!options.headers) options.headers = {};
+            if (token) options.headers['Authorization'] = `Bearer ${token}`;
             
-            if (res.ok) {
-                const data = await res.json();
-                console.log("ログイン成功、トークン保存");
-                localStorage.setItem('sb_token', data.token);
-                
-                // 画面を切り替える（隠す）
-                hideLogin();
-                
-                // 以前の指示通り /main に移動させたい場合は以下のコメントアウトを外してください
-                // window.location.href = '/main';
-                
-                await sync();
-            } else {
-                alert("ログインに失敗しました");
+            const res = await fetch(url, options);
+            if (res.status === 401) {
+                showLogin();
+                throw new Error('Unauthorized');
             }
-        } catch (e) {
-            console.error("エラー:", e);
+            return res;
         }
-    }
 
-    async function sync() {
-        try {
-            const res = await authFetch('/api/status');
-            const data = await res.json();
-            console.log("データ取得完了:", data);
-            hideLogin(); 
-        } catch (e) {
-            showLogin();
+        function showLogin() {
+            document.getElementById('loginOverlay').classList.remove('hidden');
         }
-    }
 
-    window.onload = () => {
-        if (localStorage.getItem('sb_token')) {
-            sync();
+        function hideLogin() {
+            document.getElementById('loginOverlay').classList.add('hidden');
         }
-    };
-</script>
+
+        // 2. ログイン処理
+        async function handleLogin() {
+            const id = document.getElementById('loginId').value;
+            const password = document.getElementById('loginPw').value;
+            
+            console.log("ログイン試行中:", id);
+
+            try {
+                const res = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id, password: password }) // main.pyのidに合わせる
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem('sb_token', data.token);
+                    console.log("ログイン成功");
+                    hideLogin();
+                    await sync();
+                } else {
+                    alert("IDまたはパスワードが正しくありません");
+                }
+            } catch (e) {
+                console.error(e);
+                alert("サーバーと通信できません");
+            }
+        }
+
+        // 3. データ取得と画面更新
+        async function sync() {
+            try {
+                const res = await authFetch('/api/status');
+                const data = await res.json();
+                console.log("同期成功:", data);
+                
+                // 画面にデータを表示する例
+                document.getElementById('dataDisplay').innerText = 
+                    `レコード数: ${data.records.length} 件 / ユーザー: ${Object.keys(data.users).length} 名`;
+                
+                hideLogin();
+            } catch (e) {
+                console.log("未ログイン状態");
+                showLogin();
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('sb_token');
+            location.reload();
+        }
+
+        // 起動時に自動実行
+        window.onload = sync;
+    </script>
 </body>
 </html>
