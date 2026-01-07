@@ -8,7 +8,7 @@ on:
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   REGION: asia-northeast1
-  SERVICE_NAME: smartbuilder-ai  # エラーログに合わせました（自由に変更可）
+  SERVICE_NAME: my-ai-app  # エラーログに合わせました（自由に変更可）
   REPOSITORY: app-repo           # Artifact Registryのリポジトリ名
 
 jobs:
