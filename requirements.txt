@@ -11,3 +11,4 @@ fpdf2
 line-bot-sdk
 python-multipart
 google-cloud-firestore
+google-cloud-storage
