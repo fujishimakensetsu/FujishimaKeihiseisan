@@ -65,6 +65,27 @@
             <p id="statusMsg" class="mt-2 text-blue-600"></p>
         </div>
 
+        <!-- ★ 新規追加: エクスポートボタンエリア -->
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-[2rem] shadow-sm mb-6 border border-blue-100">
+            <div class="flex justify-between items-center">
+                <div>
+                    <p class="font-bold text-slate-900">📥 データエクスポート</p>
+                    <p class="text-sm text-slate-600 mt-1">全データを各種形式でダウンロード</p>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="exportData('csv')" class="bg-white border border-slate-300 px-5 py-2 rounded-xl text-sm font-bold hover:bg-slate-50 transition">
+                        CSV
+                    </button>
+                    <button onclick="exportData('excel')" class="bg-white border border-slate-300 px-5 py-2 rounded-xl text-sm font-bold hover:bg-slate-50 transition">
+                        Excel
+                    </button>
+                    <button onclick="exportData('pdf')" class="bg-white border border-slate-300 px-5 py-2 rounded-xl text-sm font-bold hover:bg-slate-50 transition">
+                        PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- ★ 新規追加: 一括削除実行ボタン（初期は非表示） -->
         <div id="bulkDeleteActions" class="hidden bg-red-50 border-2 border-red-200 p-6 rounded-[2rem] shadow-sm mb-6">
             <div class="flex justify-between items-center">
@@ -206,6 +227,47 @@
             } catch (e) {
                 console.error(e);
                 alert('削除に失敗しました');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ★ 新規追加: データエクスポート関数
+        async function exportData(format) {
+            showLoading();
+            
+            try {
+                const res = await authFetch(`/api/export/${format}`);
+                
+                if (res.ok) {
+                    // ファイルをダウンロード
+                    const blob = await res.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    
+                    // ファイル名を取得（Content-Dispositionヘッダーから）
+                    const contentDisposition = res.headers.get('Content-Disposition');
+                    let filename = `receipts_${new Date().toISOString().split('T')[0]}.${format}`;
+                    if (contentDisposition) {
+                        const filenameMatch = contentDisposition.match(/filename=(.+)/);
+                        if (filenameMatch) {
+                            filename = filenameMatch[1].replace(/['"]/g, '');
+                        }
+                    }
+                    
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                } else {
+                    const error = await res.json();
+                    alert(`エクスポートに失敗しました: ${error.detail}`);
+                }
+            } catch (e) {
+                console.error(e);
+                alert('エクスポートに失敗しました');
             } finally {
                 hideLoading();
             }

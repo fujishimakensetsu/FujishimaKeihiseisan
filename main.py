@@ -332,6 +332,144 @@ def handle_image(event):
     finally:
         if os.path.exists(temp_path): os.remove(temp_path)
 
+# --- 出力機能エンドポイント ---
+
+@app.get("/api/export/csv")
+async def export_csv(u_id: str = Depends(get_current_user)):
+    """CSVファイルとしてエクスポート"""
+    import pandas as pd
+    from fastapi.responses import StreamingResponse
+    
+    # Firestoreからデータ取得
+    recs_query = db.collection(COL_RECORDS).order_by("date", direction=firestore.Query.DESCENDING).stream()
+    records = [doc.to_dict() for doc in recs_query]
+    
+    if not records:
+        raise HTTPException(status_code=404, detail="エクスポートするデータがありません")
+    
+    # DataFrameに変換
+    df = pd.DataFrame(records)
+    # 必要な列のみ抽出
+    columns = ['date', 'vendor_name', 'total_amount', 'owner']
+    df = df[[col for col in columns if col in df.columns]]
+    
+    # CSVに変換
+    csv_buffer = io.StringIO()
+    df.to_csv(csv_buffer, index=False, encoding='utf-8-sig')  # Excel用にBOM付き
+    csv_buffer.seek(0)
+    
+    return StreamingResponse(
+        io.BytesIO(csv_buffer.getvalue().encode('utf-8-sig')),
+        media_type='text/csv',
+        headers={'Content-Disposition': f'attachment; filename=receipts_{datetime.now().strftime("%Y%m%d")}.csv'}
+    )
+
+@app.get("/api/export/excel")
+async def export_excel(u_id: str = Depends(get_current_user)):
+    """Excelファイルとしてエクスポート"""
+    import pandas as pd
+    from fastapi.responses import StreamingResponse
+    
+    # Firestoreからデータ取得
+    recs_query = db.collection(COL_RECORDS).order_by("date", direction=firestore.Query.DESCENDING).stream()
+    records = [doc.to_dict() for doc in recs_query]
+    
+    if not records:
+        raise HTTPException(status_code=404, detail="エクスポートするデータがありません")
+    
+    # DataFrameに変換
+    df = pd.DataFrame(records)
+    # 必要な列のみ抽出・並び替え
+    columns = ['date', 'vendor_name', 'total_amount', 'owner']
+    df = df[[col for col in columns if col in df.columns]]
+    
+    # 列名を日本語に変更
+    df.columns = ['日付', '店舗名', '合計金額', '所有者']
+    
+    # Excelに変換
+    excel_buffer = io.BytesIO()
+    with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='領収書データ')
+        
+        # 列幅を自動調整
+        worksheet = writer.sheets['領収書データ']
+        for column in worksheet.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            worksheet.column_dimensions[column_letter].width = adjusted_width
+    
+    excel_buffer.seek(0)
+    
+    return StreamingResponse(
+        excel_buffer,
+        media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        headers={'Content-Disposition': f'attachment; filename=receipts_{datetime.now().strftime("%Y%m%d")}.xlsx'}
+    )
+
+@app.get("/api/export/pdf")
+async def export_pdf(u_id: str = Depends(get_current_user)):
+    """PDFファイルとしてエクスポート"""
+    from fpdf import FPDF
+    from fastapi.responses import StreamingResponse
+    
+    # Firestoreからデータ取得
+    recs_query = db.collection(COL_RECORDS).order_by("date", direction=firestore.Query.DESCENDING).stream()
+    records = [doc.to_dict() for doc in recs_query]
+    
+    if not records:
+        raise HTTPException(status_code=404, detail="エクスポートするデータがありません")
+    
+    # PDF作成
+    pdf = FPDF()
+    pdf.add_page()
+    
+    # 日本語フォント設定（フォールバック）
+    pdf.set_font("Helvetica", size=12)
+    
+    # タイトル
+    pdf.set_font("Helvetica", 'B', 16)
+    pdf.cell(0, 10, 'Receipt Records', ln=True, align='C')
+    pdf.ln(5)
+    
+    # ヘッダー
+    pdf.set_font("Helvetica", 'B', 10)
+    pdf.cell(30, 10, 'Date', border=1)
+    pdf.cell(80, 10, 'Vendor', border=1)
+    pdf.cell(40, 10, 'Amount', border=1)
+    pdf.cell(40, 10, 'Owner', border=1)
+    pdf.ln()
+    
+    # データ行
+    pdf.set_font("Helvetica", size=9)
+    for record in records:
+        date = record.get('date', '')
+        vendor = record.get('vendor_name', '')[:30]  # 長すぎる場合は切り詰め
+        amount = f"¥{record.get('total_amount', 0):,}"
+        owner = record.get('owner', '')
+        
+        pdf.cell(30, 8, date, border=1)
+        pdf.cell(80, 8, vendor, border=1)
+        pdf.cell(40, 8, amount, border=1)
+        pdf.cell(40, 8, owner, border=1)
+        pdf.ln()
+    
+    # PDFをバイナリとして出力
+    pdf_buffer = io.BytesIO(pdf.output())
+    pdf_buffer.seek(0)
+    
+    return StreamingResponse(
+        pdf_buffer,
+        media_type='application/pdf',
+        headers={'Content-Disposition': f'attachment; filename=receipts_{datetime.now().strftime("%Y%m%d")}.pdf'}
+    )
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))
