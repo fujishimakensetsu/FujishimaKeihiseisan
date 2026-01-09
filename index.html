@@ -3,15 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>.hidden { display: none !important; }</style>
+    <style>
+        .hidden { display: none !important; }
+        
+        /* ローディングスピナーのアニメーション */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+    </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
+    <!-- ログインオーバーレイ -->
     <div id="loginOverlay" class="fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center p-6">
         <div class="bg-white w-full max-w-md p-10 rounded-[2.5rem] shadow-2xl">
             <h2 class="text-3xl font-black mb-6">SmartBuilder AI</h2>
             <input type="text" id="username" placeholder="ユーザーID" class="w-full p-4 mb-4 bg-slate-50 border rounded-2xl">
             <input type="password" id="password" placeholder="パスワード" class="w-full p-4 mb-6 bg-slate-50 border rounded-2xl">
             <button onclick="login()" class="w-full bg-slate-900 text-white font-bold py-4 rounded-2xl">ログイン</button>
+        </div>
+    </div>
+
+    <!-- ★ 新規追加: ローディングオーバーレイ -->
+    <div id="loadingOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div class="bg-white p-10 rounded-[2.5rem] shadow-2xl text-center max-w-sm">
+            <!-- スピナー -->
+            <div class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+            <!-- メッセージ -->
+            <p class="text-xl font-bold text-slate-900 mb-2">AI解析中...</p>
+            <p class="text-sm text-slate-500">しばらくお待ちください</p>
         </div>
     </div>
 
@@ -31,10 +53,19 @@
         </div>
 
         <div id="recordsList" class="grid gap-4">
-            </div>
+        </div>
     </div>
 
     <script>
+        // ★ 新規追加: ローディング表示・非表示関数
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+        }
+
         async function authFetch(url, options = {}) {
             const token = localStorage.getItem('sb_token');
             if (!options.headers) options.headers = {};
@@ -66,12 +97,23 @@
         async function uploadReceipt() {
             const fileInput = document.getElementById('receiptFile');
             if (!fileInput.files[0]) return alert("ファイル選択");
+            
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
+            
+            // ★ 修正: アップロード開始時にローディング表示
+            showLoading();
+            
             try {
                 await authFetch('/upload', { method: 'POST', body: formData });
-                loadStatus();
-            } catch (e) { console.error(e); }
+                await loadStatus(); // データ更新を待つ
+            } catch (e) {
+                console.error(e);
+                alert('アップロードに失敗しました');
+            } finally {
+                // ★ 修正: 完了後にローディング非表示
+                hideLoading();
+            }
         }
 
         async function loadStatus() {
