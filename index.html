@@ -69,6 +69,39 @@
         </div>
     </div>
 
+    <!-- ★ 新規: 編集モーダル -->
+    <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2rem] shadow-2xl max-w-md w-full p-8" onclick="event.stopPropagation()">
+            <h2 class="text-2xl font-bold mb-6">レコード編集</h2>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">日付</label>
+                    <input type="date" id="editDate" class="w-full p-3 bg-slate-50 border rounded-xl">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">店舗名</label>
+                    <input type="text" id="editVendor" class="w-full p-3 bg-slate-50 border rounded-xl" placeholder="店舗名を入力">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">金額（円）</label>
+                    <input type="number" id="editAmount" class="w-full p-3 bg-slate-50 border rounded-xl" placeholder="金額を入力">
+                </div>
+            </div>
+            
+            <div class="flex gap-3 mt-8">
+                <button onclick="saveEdit()" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition">
+                    保存
+                </button>
+                <button onclick="closeEditModal()" class="flex-1 bg-slate-200 text-slate-700 font-bold py-3 rounded-xl hover:bg-slate-300 transition">
+                    キャンセル
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="mainContent" class="max-w-4xl mx-auto p-8">
         <header class="flex justify-between items-center mb-8">
             <h1 class="text-3xl font-black">領収書ダッシュボード</h1>
@@ -136,6 +169,7 @@
         let isBulkDeleteMode = false;
         let selectedRecords = new Set();
         let selectedFiles = [];
+        let editingRecordId = null; // 編集中のレコードID
 
         // ローディング表示・非表示関数
         function showLoading(message = 'AI解析中...', subtext = 'しばらくお待ちください') {
@@ -184,8 +218,70 @@
 
         // ESCキーでモーダルを閉じる
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') closeImageModal();
+            if (e.key === 'Escape') {
+                closeImageModal();
+                closeEditModal();
+            }
         });
+
+        // ★ 新規: 編集モーダルの開閉
+        function openEditModal(record) {
+            editingRecordId = record.id;
+            
+            // フィールドに現在の値をセット
+            document.getElementById('editDate').value = record.date || '';
+            document.getElementById('editVendor').value = record.vendor_name || '';
+            document.getElementById('editAmount').value = record.total_amount || '';
+            
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            editingRecordId = null;
+            document.getElementById('editModal').classList.add('hidden');
+        }
+
+        async function saveEdit() {
+            if (!editingRecordId) return;
+            
+            const date = document.getElementById('editDate').value;
+            const vendor = document.getElementById('editVendor').value;
+            const amount = document.getElementById('editAmount').value;
+            
+            // バリデーション
+            if (!date || !vendor || !amount) {
+                alert('全ての項目を入力してください');
+                return;
+            }
+            
+            showLoading('更新中...', '');
+            
+            try {
+                const res = await authFetch(`/api/records/${editingRecordId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        date: date,
+                        vendor_name: vendor,
+                        total_amount: parseInt(amount)
+                    })
+                });
+                
+                if (res.ok) {
+                    alert('更新しました');
+                    closeEditModal();
+                    await loadStatus();
+                } else {
+                    const error = await res.json();
+                    alert(`更新に失敗しました: ${error.detail}`);
+                }
+            } catch (e) {
+                console.error(e);
+                alert('更新に失敗しました');
+            } finally {
+                hideLoading();
+            }
+        }
 
         // ★ 新規: ドラッグ&ドロップ機能
         const dropZone = document.getElementById('dropZone');
@@ -529,6 +625,11 @@
                         <div class="flex items-center gap-4">
                             <p class="text-xl font-black text-blue-600">¥${r.total_amount.toLocaleString()}</p>
                             ${!isBulkDeleteMode ? `
+                                <button onclick='openEditModal(${JSON.stringify(r)})' 
+                                        class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-100 transition"
+                                        title="編集">
+                                    ✏️
+                                </button>
                                 <button onclick="deleteRecord('${r.id}', '${r.vendor_name}')" 
                                         class="bg-red-50 text-red-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-red-100 transition"
                                         title="削除">

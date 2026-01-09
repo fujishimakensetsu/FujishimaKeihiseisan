@@ -356,6 +356,58 @@ async def webhook(request: Request):
         raise HTTPException(status_code=400)
     return "OK"
 
+@app.put("/api/records/{record_id}")
+async def update_record(record_id: str, data: dict, u_id: str = Depends(get_current_user)):
+    """レコードの情報を更新"""
+    try:
+        print(f"=== Update request for record: {record_id} ===")
+        print(f"Update data: {data}")
+        
+        # 1. Firestoreからレコードを取得
+        doc_ref = db.collection(COL_RECORDS).document(record_id)
+        doc = doc_ref.get()
+        
+        if not doc.exists:
+            raise HTTPException(status_code=404, detail="レコードが見つかりません")
+        
+        record_data = doc.to_dict()
+        
+        # 2. 権限チェック（adminまたは所有者のみ編集可能）
+        if u_id != "admin" and record_data.get("owner") != u_id:
+            raise HTTPException(status_code=403, detail="編集権限がありません")
+        
+        # 3. 更新するフィールドを準備
+        update_data = {}
+        
+        if "date" in data:
+            update_data["date"] = data["date"]
+        
+        if "vendor_name" in data:
+            update_data["vendor_name"] = data["vendor_name"]
+        
+        if "total_amount" in data:
+            # 文字列の場合は数値に変換（カンマや¥記号を除去）
+            try:
+                amount = int(str(data["total_amount"]).replace(",", "").replace("¥", "").strip())
+                update_data["total_amount"] = amount
+            except ValueError:
+                raise HTTPException(status_code=400, detail="金額は数値で指定してください")
+        
+        # 4. Firestoreを更新
+        if update_data:
+            doc_ref.update(update_data)
+            print(f"✅ Updated record {record_id}: {update_data}")
+        
+        return {"message": "更新しました", "id": record_id, "updated_fields": update_data}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Update error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"更新に失敗しました: {str(e)}")
+
 @app.delete("/api/records/{record_id}")
 async def delete_record(record_id: str, u_id: str = Depends(get_current_user)):
     """レコードを削除（Firestore + GCS）"""
