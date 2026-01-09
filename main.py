@@ -185,48 +185,70 @@ async def get_status(u_id: str = Depends(get_current_user)):
     return {"records": records, "users": users}
 
 @app.post("/upload")
-async def upload_receipt(file: UploadFile = File(...), u_id: str = Depends(get_current_user)):
-    # 1. 一時保存
-    temp_path = os.path.join(UPLOAD_DIR, file.filename)
-    with open(temp_path, "wb") as b: shutil.copyfileobj(file.file, b)
+async def upload_receipt(files: list[UploadFile] = File(...), u_id: str = Depends(get_current_user)):
+    """複数ファイルのアップロードに対応（個別処理）"""
+    all_results = []
     
-    # PDFファイルかどうかをチェック
-    is_pdf = file.filename.lower().endswith('.pdf')
+    for file in files:
+        try:
+            # 1. 一時保存
+            temp_path = os.path.join(UPLOAD_DIR, file.filename)
+            with open(temp_path, "wb") as b: shutil.copyfileobj(file.file, b)
+            
+            # PDFファイルかどうかをチェック
+            is_pdf = file.filename.lower().endswith('.pdf')
+            
+            # 2. Cloud Storageへアップロード
+            gcs_file_name = f"receipts/{int(time.time())}_{file.filename}"
+            public_url = upload_to_gcs(temp_path, gcs_file_name)
+            
+            # 3. PDFの場合は画像化
+            pdf_image_urls = []
+            if is_pdf and PDF_SUPPORT:
+                pdf_image_urls = convert_pdf_to_images(temp_path)
+            
+            # 4. Gemini 解析（ファイルごとに個別処理）
+            genai_file = genai.upload_file(path=temp_path)
+            while genai_file.state.name == "PROCESSING": 
+                time.sleep(1)
+                genai_file = genai.get_file(genai_file.name)
+            response = model.generate_content([genai_file, PROMPT])
+            
+            data_list = json.loads(response.text.strip().replace('```json', '').replace('```', ''))
+            
+            # 5. Firestore への保存
+            for item in (data_list if isinstance(data_list, list) else [data_list]):
+                doc_id = str(int(time.time()*1000))
+                time.sleep(0.001)  # IDの重複を避けるため
+                item.update({
+                    "image_url": public_url,
+                    "id": doc_id,
+                    "created_at": firestore.SERVER_TIMESTAMP,
+                    "owner": u_id,
+                    "is_pdf": is_pdf,
+                    "pdf_images": pdf_image_urls if is_pdf else []
+                })
+                db.collection(COL_RECORDS).document(doc_id).set(item)
+            
+            db.collection(COL_USERS).document(u_id).update({"used": firestore.Increment(1)})
+            
+            # 6. 一時ファイルを削除
+            os.remove(temp_path)
+            
+            all_results.append({
+                "filename": file.filename,
+                "status": "success",
+                "data": data_list
+            })
+            
+        except Exception as e:
+            all_results.append({
+                "filename": file.filename,
+                "status": "error",
+                "error": str(e)
+            })
     
-    # 2. Cloud Storageへアップロード
-    gcs_file_name = f"receipts/{int(time.time())}_{file.filename}"
-    public_url = upload_to_gcs(temp_path, gcs_file_name)
-    
-    # 3. PDFの場合は画像化
-    pdf_image_urls = []
-    if is_pdf and PDF_SUPPORT:
-        pdf_image_urls = convert_pdf_to_images(temp_path)
-    
-    # 4. Gemini 解析
-    genai_file = genai.upload_file(path=temp_path)
-    while genai_file.state.name == "PROCESSING": time.sleep(1); genai_file = genai.get_file(genai_file.name)
-    response = model.generate_content([genai_file, PROMPT])
-    
-    data_list = json.loads(response.text.strip().replace('```json', '').replace('```', ''))
-    
-    # 5. Firestore への保存
-    for item in (data_list if isinstance(data_list, list) else [data_list]):
-        doc_id = str(int(time.time()*1000))
-        item.update({
-            "image_url": public_url,
-            "id": doc_id,
-            "created_at": firestore.SERVER_TIMESTAMP,
-            "owner": u_id,
-            "is_pdf": is_pdf,
-            "pdf_images": pdf_image_urls if is_pdf else []  # PDF画像URLリスト
-        })
-        db.collection(COL_RECORDS).document(doc_id).set(item)
-    
-    db.collection(COL_USERS).document(u_id).update({"used": firestore.Increment(1)})
-    
-    # 6. 一時ファイルを削除してサーバーを綺麗に保つ
-    os.remove(temp_path)
-    return {"data": data_list}
+    return {"results": all_results}
 
 @app.delete("/delete/{record_id}")
 async def delete_record(record_id: str, u_id: str = Depends(get_current_user)):

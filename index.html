@@ -2,6 +2,8 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartBuilder AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .hidden { display: none !important; }
@@ -12,6 +14,16 @@
         }
         .animate-spin {
             animation: spin 1s linear infinite;
+        }
+        
+        /* ドラッグ&ドロップエリアのスタイル */
+        .drop-zone {
+            border: 3px dashed #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .drop-zone.dragover {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
         }
     </style>
 </head>
@@ -26,22 +38,22 @@
         </div>
     </div>
 
-    <!-- ★ 新規追加: ローディングオーバーレイ -->
+    <!-- ローディングオーバーレイ -->
     <div id="loadingOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
         <div class="bg-white p-10 rounded-[2.5rem] shadow-2xl text-center max-w-sm">
             <!-- スピナー -->
             <div class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
             <!-- メッセージ -->
-            <p class="text-xl font-bold text-slate-900 mb-2">AI解析中...</p>
-            <p class="text-sm text-slate-500">しばらくお待ちください</p>
+            <p class="text-xl font-bold text-slate-900 mb-2" id="loadingMessage">AI解析中...</p>
+            <p class="text-sm text-slate-500" id="loadingSubtext">しばらくお待ちください</p>
         </div>
     </div>
 
-    <!-- ★ 修正: 画像拡大表示モーダル（複数画像スクロール対応） -->
-    <div id="imageModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4" onclick="closeImageModal()">
+    <!-- ★ 修正: 画像拡大表示モーダル（複数画像スクロール対応・背景クリック対応） -->
+    <div id="imageModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4">
         <div class="relative w-full h-full max-w-6xl max-h-[95vh] flex flex-col">
             <!-- 閉じるボタン -->
-            <button onclick="closeImageModal(); event.stopPropagation();" class="absolute top-4 right-4 bg-white text-slate-900 rounded-full w-12 h-12 flex items-center justify-center font-bold text-2xl shadow-lg hover:bg-slate-100 transition z-10">
+            <button onclick="closeImageModal()" class="absolute top-4 right-4 bg-white text-slate-900 rounded-full w-12 h-12 flex items-center justify-center font-bold text-2xl shadow-lg hover:bg-slate-100 transition z-10">
                 ×
             </button>
             
@@ -67,13 +79,20 @@
             </div>
         </header>
 
+        <!-- ★ 修正: ドラッグ&ドロップ対応のファイルアップロードエリア -->
         <div class="bg-white p-8 rounded-[2rem] shadow-sm mb-10">
-            <input type="file" id="receiptFile" class="mb-4">
-            <button onclick="uploadReceipt()" id="uploadBtn" class="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold">解析実行</button>
-            <p id="statusMsg" class="mt-2 text-blue-600"></p>
+            <div id="dropZone" class="drop-zone bg-slate-50 rounded-2xl p-12 text-center cursor-pointer mb-4">
+                <div class="text-6xl mb-4">📁</div>
+                <p class="text-xl font-bold text-slate-700 mb-2">ファイルをドロップ</p>
+                <p class="text-sm text-slate-500 mb-4">またはクリックして選択</p>
+                <p class="text-xs text-slate-400">対応形式: 画像（JPG, PNG）、PDF</p>
+                <input type="file" id="receiptFile" multiple accept="image/*,.pdf" class="hidden">
+            </div>
+            <div id="fileListDisplay" class="mb-4"></div>
+            <button onclick="uploadReceipts()" id="uploadBtn" class="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold w-full">解析実行</button>
         </div>
 
-        <!-- ★ 新規追加: エクスポートボタンエリア -->
+        <!-- エクスポートボタンエリア -->
         <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-[2rem] shadow-sm mb-6 border border-blue-100">
             <div class="flex justify-between items-center">
                 <div>
@@ -94,7 +113,7 @@
             </div>
         </div>
 
-        <!-- ★ 新規追加: 一括削除実行ボタン（初期は非表示） -->
+        <!-- 一括削除実行ボタン（初期は非表示） -->
         <div id="bulkDeleteActions" class="hidden bg-red-50 border-2 border-red-200 p-6 rounded-[2rem] shadow-sm mb-6">
             <div class="flex justify-between items-center">
                 <div>
@@ -109,17 +128,19 @@
             </div>
         </div>
 
-        <div id="recordsList" class="grid gap-4">
-        </div>
+        <div id="recordsList" class="grid gap-4"></div>
     </div>
 
     <script>
         // 一括削除モードの状態管理
         let isBulkDeleteMode = false;
         let selectedRecords = new Set();
+        let selectedFiles = [];
 
-        // ★ 新規追加: ローディング表示・非表示関数
-        function showLoading() {
+        // ローディング表示・非表示関数
+        function showLoading(message = 'AI解析中...', subtext = 'しばらくお待ちください') {
+            document.getElementById('loadingMessage').textContent = message;
+            document.getElementById('loadingSubtext').textContent = subtext;
             document.getElementById('loadingOverlay').classList.remove('hidden');
         }
 
@@ -142,7 +163,7 @@
             container.innerHTML = imageUrls.map((url, index) => `
                 <div class="w-full flex flex-col items-center">
                     ${imageUrls.length > 1 ? `<div class="bg-white px-3 py-1 rounded-lg mb-2 text-sm font-bold">ページ ${index + 1}</div>` : ''}
-                    <img src="${url}" class="max-w-full rounded-2xl shadow-2xl" onclick="event.stopPropagation()">
+                    <img src="${url}" class="max-w-full rounded-2xl shadow-2xl">
                 </div>
             `).join('');
             
@@ -161,12 +182,68 @@
             document.getElementById('imageModal').classList.add('hidden');
         }
 
+        // ★ 修正: 背景クリックでモーダルを閉じる
+        document.getElementById('imageModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeImageModal();
+            }
+        });
+
         // ESCキーでモーダルを閉じる
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') closeImageModal();
         });
 
-        // ★ 新規追加: 一括削除モード切替
+        // ★ 新規: ドラッグ&ドロップ機能
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('receiptFile');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files);
+            handleFileSelection(files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            handleFileSelection(files);
+        });
+
+        function handleFileSelection(files) {
+            selectedFiles = files;
+            displaySelectedFiles();
+        }
+
+        function displaySelectedFiles() {
+            const display = document.getElementById('fileListDisplay');
+            if (selectedFiles.length === 0) {
+                display.innerHTML = '';
+                return;
+            }
+            
+            display.innerHTML = `
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-200">
+                    <p class="font-bold text-sm text-blue-900 mb-2">選択されたファイル (${selectedFiles.length}件)</p>
+                    <ul class="text-sm text-slate-700 space-y-1">
+                        ${selectedFiles.map(f => `<li>📄 ${f.name}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        // 一括削除モード切替
         function toggleBulkDeleteMode() {
             isBulkDeleteMode = !isBulkDeleteMode;
             selectedRecords.clear();
@@ -186,10 +263,9 @@
                 actionsDiv.classList.add('hidden');
             }
             
-            loadStatus(); // リストを再描画
+            loadStatus();
         }
 
-        // ★ 新規追加: チェックボックスの切替
         function toggleRecordSelection(recordId) {
             if (selectedRecords.has(recordId)) {
                 selectedRecords.delete(recordId);
@@ -199,7 +275,6 @@
             updateCheckbox(recordId);
         }
 
-        // ★ 新規追加: チェックボックスの表示更新
         function updateCheckbox(recordId) {
             const checkbox = document.getElementById(`check-${recordId}`);
             if (checkbox) {
@@ -207,16 +282,13 @@
             }
         }
 
-        // ★ 新規追加: 全選択
         function selectAllRecords() {
             const checkboxes = document.querySelectorAll('input[type="checkbox"][id^="check-"]');
             const allSelected = selectedRecords.size === checkboxes.length;
             
             if (allSelected) {
-                // 全解除
                 selectedRecords.clear();
             } else {
-                // 全選択
                 checkboxes.forEach(cb => {
                     const recordId = cb.id.replace('check-', '');
                     selectedRecords.add(recordId);
@@ -226,7 +298,6 @@
             checkboxes.forEach(cb => cb.checked = !allSelected);
         }
 
-        // ★ 新規追加: 一括削除実行
         async function executeBulkDelete() {
             if (selectedRecords.size === 0) {
                 alert('削除する項目を選択してください');
@@ -237,7 +308,7 @@
                 return;
             }
 
-            showLoading();
+            showLoading('削除中...', '');
 
             try {
                 const res = await authFetch('/api/records/bulk-delete', {
@@ -250,7 +321,7 @@
                     const result = await res.json();
                     alert(result.message);
                     selectedRecords.clear();
-                    toggleBulkDeleteMode(); // モードを解除
+                    toggleBulkDeleteMode();
                     await loadStatus();
                 } else {
                     const error = await res.json();
@@ -264,21 +335,18 @@
             }
         }
 
-        // ★ 新規追加: データエクスポート関数
         async function exportData(format) {
-            showLoading();
+            showLoading('エクスポート中...', '');
             
             try {
                 const res = await authFetch(`/api/export/${format}`);
                 
                 if (res.ok) {
-                    // ファイルをダウンロード
                     const blob = await res.blob();
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
                     
-                    // ファイル名を取得（Content-Dispositionヘッダーから）
                     const contentDisposition = res.headers.get('Content-Disposition');
                     let filename = `receipts_${new Date().toISOString().split('T')[0]}.${format}`;
                     if (contentDisposition) {
@@ -300,61 +368,6 @@
             } catch (e) {
                 console.error(e);
                 alert('エクスポートに失敗しました');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        // ★ 新規追加: レコード削除関数
-        async function deleteRecord(recordId, vendorName) {
-            if (!confirm(`「${vendorName}」のレコードを削除しますか？\n※この操作は取り消せません`)) {
-                return;
-            }
-
-            showLoading();
-            
-            try {
-                const res = await authFetch(`/api/records/${recordId}`, {
-                    method: 'DELETE'
-                });
-                
-                if (res.ok) {
-                    await loadStatus(); // リストを更新
-                    alert('削除しました');
-                } else {
-                    const error = await res.json();
-                    alert(`削除に失敗しました: ${error.detail}`);
-                }
-            } catch (e) {
-                console.error(e);
-                alert('削除に失敗しました');
-            } finally {
-                hideLoading();
-            }
-        }
-
-        // ★ 新規追加: レコード削除機能
-        async function deleteRecord(recordId) {
-            if (!confirm('本当に削除しますか？\n※ 画像ファイルも完全に削除されます')) {
-                return;
-            }
-            
-            showLoading(); // 削除中のローディング表示
-            
-            try {
-                const res = await authFetch(`/delete/${recordId}`, { 
-                    method: 'DELETE' 
-                });
-                
-                if (res.ok) {
-                    await loadStatus(); // リスト更新
-                } else {
-                    const error = await res.json();
-                    alert(`削除失敗: ${error.detail || '不明なエラー'}`);
-                }
-            } catch (e) {
-                console.error(e);
-                alert('削除に失敗しました');
             } finally {
                 hideLoading();
             }
@@ -385,27 +398,66 @@
                 localStorage.setItem('sb_token', data.token);
                 hideLogin();
                 loadStatus();
-            } else { alert("失敗"); }
+            } else { alert("ログイン失敗"); }
         }
 
-        async function uploadReceipt() {
-            const fileInput = document.getElementById('receiptFile');
-            if (!fileInput.files[0]) return alert("ファイル選択");
+        // ★ 修正: 複数ファイルアップロード対応
+        async function uploadReceipts() {
+            if (selectedFiles.length === 0) return alert("ファイルを選択してください");
             
             const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
+            selectedFiles.forEach(file => formData.append('files', file));
             
-            // ★ 修正: アップロード開始時にローディング表示
-            showLoading();
+            showLoading(`解析中... (0 / ${selectedFiles.length})`, 'しばらくお待ちください');
             
             try {
-                await authFetch('/upload', { method: 'POST', body: formData });
-                await loadStatus(); // データ更新を待つ
+                const res = await authFetch('/upload', { 
+                    method: 'POST', 
+                    body: formData 
+                });
+                
+                if (res.ok) {
+                    const result = await res.json();
+                    const successCount = result.results.filter(r => r.status === 'success').length;
+                    alert(`${successCount}件のファイルを処理しました`);
+                    selectedFiles = [];
+                    fileInput.value = '';
+                    displaySelectedFiles();
+                    await loadStatus();
+                } else {
+                    alert('アップロードに失敗しました');
+                }
             } catch (e) {
                 console.error(e);
                 alert('アップロードに失敗しました');
             } finally {
-                // ★ 修正: 完了後にローディング非表示
+                hideLoading();
+            }
+        }
+
+        async function deleteRecord(recordId, vendorName) {
+            if (!confirm(`「${vendorName}」のレコードを削除しますか？\n※この操作は取り消せません`)) {
+                return;
+            }
+
+            showLoading('削除中...', '');
+            
+            try {
+                const res = await authFetch(`/api/records/${recordId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (res.ok) {
+                    await loadStatus();
+                    alert('削除しました');
+                } else {
+                    const error = await res.json();
+                    alert(`削除に失敗しました: ${error.detail}`);
+                }
+            } catch (e) {
+                console.error(e);
+                alert('削除に失敗しました');
+            } finally {
                 hideLoading();
             }
         }
@@ -416,7 +468,6 @@
                 const data = await res.json();
                 const list = document.getElementById('recordsList');
                 list.innerHTML = data.records.reverse().map(r => {
-                    // PDFの場合は画像化されたURLを使用、それ以外は元のURL
                     const displayUrl = (r.pdf_images && r.pdf_images.length > 0) ? r.pdf_images[0] : r.image_url;
                     const allImages = (r.pdf_images && r.pdf_images.length > 0) ? r.pdf_images : [r.image_url];
                     
@@ -463,7 +514,6 @@
             if (localStorage.getItem('sb_token')) {
                 hideLogin();
                 loadStatus();
-                // 30秒ごとに自動更新（LINE連携の反映をキャッチするため）
                 setInterval(loadStatus, 30000);
             } else { showLogin(); }
         };
