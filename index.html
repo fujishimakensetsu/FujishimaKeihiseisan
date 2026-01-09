@@ -89,6 +89,20 @@
                     <label class="block text-sm font-bold text-slate-700 mb-2">金額（円）</label>
                     <input type="number" id="editAmount" class="w-full p-3 bg-slate-50 border rounded-xl" placeholder="金額を入力">
                 </div>
+                
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">カテゴリ</label>
+                    <select id="editCategory" class="w-full p-3 bg-slate-50 border rounded-xl">
+                        <option value="食費">🍽️ 食費</option>
+                        <option value="交通費">🚃 交通費</option>
+                        <option value="事務用品">🏢 事務用品</option>
+                        <option value="光熱費">💡 光熱費</option>
+                        <option value="通信費">📱 通信費</option>
+                        <option value="医療費">🏥 医療費</option>
+                        <option value="交際費">🎉 交際費</option>
+                        <option value="その他">📦 その他</option>
+                    </select>
+                </div>
             </div>
             
             <div class="flex gap-3 mt-8">
@@ -111,6 +125,60 @@
                 <button onclick="logout()" class="text-red-500 font-bold">ログアウト</button>
             </div>
         </header>
+
+        <!-- ★ 新規: 検索・フィルターエリア -->
+        <div class="bg-white p-6 rounded-[2rem] shadow-sm mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- 店舗名検索 -->
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">🔍 店舗名検索</label>
+                    <input type="text" id="searchVendor" placeholder="店舗名を入力" 
+                           class="w-full p-3 bg-slate-50 border rounded-xl"
+                           oninput="applyFilters()">
+                </div>
+                
+                <!-- 開始日 -->
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">📅 開始日</label>
+                    <input type="date" id="filterStartDate" 
+                           class="w-full p-3 bg-slate-50 border rounded-xl"
+                           onchange="applyFilters()">
+                </div>
+                
+                <!-- 終了日 -->
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">📅 終了日</label>
+                    <input type="date" id="filterEndDate" 
+                           class="w-full p-3 bg-slate-50 border rounded-xl"
+                           onchange="applyFilters()">
+                </div>
+                
+                <!-- カテゴリフィルター -->
+                <div>
+                    <label class="block text-sm font-bold text-slate-700 mb-2">🏷️ カテゴリ</label>
+                    <select id="filterCategory" 
+                            class="w-full p-3 bg-slate-50 border rounded-xl"
+                            onchange="applyFilters()">
+                        <option value="">すべて</option>
+                        <option value="食費">🍽️ 食費</option>
+                        <option value="交通費">🚃 交通費</option>
+                        <option value="事務用品">🏢 事務用品</option>
+                        <option value="光熱費">💡 光熱費</option>
+                        <option value="通信費">📱 通信費</option>
+                        <option value="医療費">🏥 医療費</option>
+                        <option value="交際費">🎉 交際費</option>
+                        <option value="その他">📦 その他</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- フィルタークリアボタン -->
+            <div class="mt-4 flex justify-end">
+                <button onclick="clearFilters()" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-300 transition">
+                    フィルターをクリア
+                </button>
+            </div>
+        </div>
 
         <!-- ★ 修正: ドラッグ&ドロップ対応のファイルアップロードエリア -->
         <div class="bg-white p-8 rounded-[2rem] shadow-sm mb-10">
@@ -170,6 +238,19 @@
         let selectedRecords = new Set();
         let selectedFiles = [];
         let editingRecordId = null; // 編集中のレコードID
+        let allRecords = []; // 全レコードを保持
+
+        // カテゴリアイコンのマッピング
+        const categoryIcons = {
+            '食費': '🍽️',
+            '交通費': '🚃',
+            '事務用品': '🏢',
+            '光熱費': '💡',
+            '通信費': '📱',
+            '医療費': '🏥',
+            '交際費': '🎉',
+            'その他': '📦'
+        };
 
         // ローディング表示・非表示関数
         function showLoading(message = 'AI解析中...', subtext = 'しばらくお待ちください') {
@@ -260,6 +341,7 @@
             document.getElementById('editDate').value = record.date || '';
             document.getElementById('editVendor').value = record.vendor_name || '';
             document.getElementById('editAmount').value = record.total_amount || '';
+            document.getElementById('editCategory').value = record.category || 'その他';
             
             document.getElementById('editModal').classList.remove('hidden');
         }
@@ -275,10 +357,11 @@
             const date = document.getElementById('editDate').value;
             const vendor = document.getElementById('editVendor').value;
             const amount = document.getElementById('editAmount').value;
+            const category = document.getElementById('editCategory').value;
             
             // バリデーション
             if (!date || !vendor || !amount) {
-                alert('全ての項目を入力してください');
+                alert('日付、店舗名、金額は必須項目です');
                 return;
             }
             
@@ -291,7 +374,8 @@
                     body: JSON.stringify({
                         date: date,
                         vendor_name: vendor,
-                        total_amount: parseInt(amount)
+                        total_amount: parseInt(amount),
+                        category: category
                     })
                 });
                 
@@ -619,54 +703,103 @@
             }
         }
 
+        // ★ 新規: フィルター機能
+        function applyFilters() {
+            const searchVendor = document.getElementById('searchVendor').value.toLowerCase();
+            const startDate = document.getElementById('filterStartDate').value;
+            const endDate = document.getElementById('filterEndDate').value;
+            const category = document.getElementById('filterCategory').value;
+            
+            let filtered = allRecords.filter(r => {
+                // 店舗名フィルター
+                if (searchVendor && !r.vendor_name.toLowerCase().includes(searchVendor)) {
+                    return false;
+                }
+                
+                // 日付フィルター（開始日）
+                if (startDate && r.date < startDate) {
+                    return false;
+                }
+                
+                // 日付フィルター（終了日）
+                if (endDate && r.date > endDate) {
+                    return false;
+                }
+                
+                // カテゴリフィルター
+                if (category && r.category !== category) {
+                    return false;
+                }
+                
+                return true;
+            });
+            
+            renderRecords(filtered);
+        }
+
+        function clearFilters() {
+            document.getElementById('searchVendor').value = '';
+            document.getElementById('filterStartDate').value = '';
+            document.getElementById('filterEndDate').value = '';
+            document.getElementById('filterCategory').value = '';
+            renderRecords(allRecords);
+        }
+
+        function renderRecords(records) {
+            const list = document.getElementById('recordsList');
+            list.innerHTML = records.map(r => {
+                const displayUrl = (r.pdf_images && r.pdf_images.length > 0) ? r.pdf_images[0] : r.image_url;
+                const allImages = (r.pdf_images && r.pdf_images.length > 0) ? r.pdf_images : [r.image_url];
+                const categoryIcon = categoryIcons[r.category] || '📦';
+                
+                return `
+                <div class="bg-white p-6 rounded-2xl shadow-sm flex justify-between items-center">
+                    <div class="flex gap-4 items-center">
+                        ${isBulkDeleteMode ? `
+                            <input type="checkbox" 
+                                   id="check-${r.id}" 
+                                   ${selectedRecords.has(r.id) ? 'checked' : ''}
+                                   onchange="toggleRecordSelection('${r.id}')"
+                                   class="w-5 h-5 cursor-pointer">
+                        ` : ''}
+                        <div class="relative">
+                            <img src="${displayUrl}" 
+                                 class="w-12 h-12 object-cover rounded-lg cursor-pointer hover:opacity-80 transition" 
+                                 onclick='openImageModal(${JSON.stringify(allImages)})'
+                                 title="クリックで拡大表示">
+                            ${r.is_pdf ? '<span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 rounded">PDF</span>' : ''}
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-400">${r.date}</p>
+                            <p class="font-bold">${r.vendor_name}</p>
+                            <p class="text-xs text-slate-500">${categoryIcon} ${r.category || 'その他'}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <p class="text-xl font-black text-blue-600">¥${r.total_amount.toLocaleString()}</p>
+                        ${!isBulkDeleteMode ? `
+                            <button onclick='openEditModal(${JSON.stringify(r)})' 
+                                    class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-100 transition"
+                                    title="編集">
+                                ✏️
+                            </button>
+                            <button onclick="deleteRecord('${r.id}', '${r.vendor_name}')" 
+                                    class="bg-red-50 text-red-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-red-100 transition"
+                                    title="削除">
+                                🗑️
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `}).join('');
+        }
+
         async function loadStatus() {
             try {
                 const res = await authFetch('/api/status');
                 const data = await res.json();
-                const list = document.getElementById('recordsList');
-                list.innerHTML = data.records.reverse().map(r => {
-                    const displayUrl = (r.pdf_images && r.pdf_images.length > 0) ? r.pdf_images[0] : r.image_url;
-                    const allImages = (r.pdf_images && r.pdf_images.length > 0) ? r.pdf_images : [r.image_url];
-                    
-                    return `
-                    <div class="bg-white p-6 rounded-2xl shadow-sm flex justify-between items-center">
-                        <div class="flex gap-4 items-center">
-                            ${isBulkDeleteMode ? `
-                                <input type="checkbox" 
-                                       id="check-${r.id}" 
-                                       ${selectedRecords.has(r.id) ? 'checked' : ''}
-                                       onchange="toggleRecordSelection('${r.id}')"
-                                       class="w-5 h-5 cursor-pointer">
-                            ` : ''}
-                            <div class="relative">
-                                <img src="${displayUrl}" 
-                                     class="w-12 h-12 object-cover rounded-lg cursor-pointer hover:opacity-80 transition" 
-                                     onclick='openImageModal(${JSON.stringify(allImages)})'
-                                     title="クリックで拡大表示">
-                                ${r.is_pdf ? '<span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 rounded">PDF</span>' : ''}
-                            </div>
-                            <div>
-                                <p class="text-xs text-slate-400">${r.date}</p>
-                                <p class="font-bold">${r.vendor_name}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-4">
-                            <p class="text-xl font-black text-blue-600">¥${r.total_amount.toLocaleString()}</p>
-                            ${!isBulkDeleteMode ? `
-                                <button onclick='openEditModal(${JSON.stringify(r)})' 
-                                        class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-100 transition"
-                                        title="編集">
-                                    ✏️
-                                </button>
-                                <button onclick="deleteRecord('${r.id}', '${r.vendor_name}')" 
-                                        class="bg-red-50 text-red-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-red-100 transition"
-                                        title="削除">
-                                    🗑️
-                                </button>
-                            ` : ''}
-                        </div>
-                    </div>
-                `}).join('');
+                allRecords = data.records.reverse();
+                applyFilters(); // フィルターを適用してレンダリング
             } catch (e) { console.error(e); }
         }
 

@@ -263,7 +263,8 @@ async def upload_receipt(files: List[UploadFile] = File(...), u_id: str = Depend
                     "owner": u_id,
                     "is_pdf": is_pdf,
                     "pdf_images": pdf_image_urls if is_pdf else [],
-                    "original_filename": original_filename  # 元のファイル名を保存
+                    "original_filename": original_filename,  # 元のファイル名を保存
+                    "category": "その他"  # デフォルトカテゴリ
                 })
                 db.collection(COL_RECORDS).document(doc_id).set(item)
             
@@ -392,6 +393,9 @@ async def update_record(record_id: str, data: dict, u_id: str = Depends(get_curr
                 update_data["total_amount"] = amount
             except ValueError:
                 raise HTTPException(status_code=400, detail="金額は数値で指定してください")
+        
+        if "category" in data:
+            update_data["category"] = data["category"]
         
         # 4. Firestoreを更新
         if update_data:
