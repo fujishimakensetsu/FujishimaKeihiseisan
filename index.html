@@ -219,9 +219,7 @@
         // モーダルのイベントリスナーを設定
         document.addEventListener('DOMContentLoaded', function() {
             const modal = document.getElementById('imageModal');
-            const container = document.getElementById('modalImagesContainer');
             const closeBtn = document.getElementById('closeModalBtn');
-            const pageInfo = document.getElementById('pageInfo');
             
             // 閉じるボタンのクリック
             closeBtn.addEventListener('click', function(e) {
@@ -229,26 +227,21 @@
                 closeImageModal();
             });
             
-            // モーダル全体のクリック（背景）
+            // モーダル背景のクリック検出
             modal.addEventListener('click', function(e) {
-                // クリックされた要素がモーダル自身の場合のみ閉じる
-                if (e.target === modal) {
+                // クリックされた要素を取得
+                const clickedElement = e.target;
+                
+                // 画像、閉じるボタン、ページ情報以外がクリックされた場合は閉じる
+                const isImage = clickedElement.tagName === 'IMG';
+                const isCloseButton = clickedElement.id === 'closeModalBtn' || clickedElement.closest('#closeModalBtn');
+                const isPageInfo = clickedElement.closest('#pageInfo');
+                
+                // 画像、ボタン、ページ情報以外をクリックした場合は閉じる
+                if (!isImage && !isCloseButton && !isPageInfo) {
                     closeImageModal();
                 }
             });
-            
-            // コンテナ、ページ情報のクリックは伝播を止める
-            if (container) {
-                container.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                });
-            }
-            
-            if (pageInfo) {
-                pageInfo.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                });
-            }
         });
 
         // ESCキーでモーダルを閉じる
