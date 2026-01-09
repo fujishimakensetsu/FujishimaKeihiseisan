@@ -272,10 +272,11 @@ async def upload_receipt(files: List[UploadFile] = File(...), u_id: str = Depend
             # 6. 一時ファイルを削除
             os.remove(temp_path)
             
+            # Firestoreに保存されたデータの概要のみを記録
             all_results.append({
                 "filename": original_filename,
                 "status": "success",
-                "data": data_list if isinstance(data_list, (list, dict)) else str(data_list)
+                "records_count": len(data_list) if isinstance(data_list, list) else 1
             })
             print(f"✅ Success: {original_filename}")
             
@@ -284,30 +285,26 @@ async def upload_receipt(files: List[UploadFile] = File(...), u_id: str = Depend
             import traceback
             traceback.print_exc()  # 詳細なスタックトレースを出力
             all_results.append({
-                "filename": file.filename,
+                "filename": str(file.filename),
                 "status": "error",
-                "error": f"{type(e).__name__}: {str(e)}"
+                "error": str(e)
             })
     
     print(f"\n=== Upload complete ===")
-    print(f"Success: {len([r for r in all_results if r['status'] == 'success'])}")
-    print(f"Errors: {len([r for r in all_results if r['status'] == 'error'])}")
+    success_count = len([r for r in all_results if r['status'] == 'success'])
+    error_count = len([r for r in all_results if r['status'] == 'error'])
+    print(f"Success: {success_count}")
+    print(f"Errors: {error_count}")
     
-    # ★ 追加: レスポンスをJSON安全な形式に変換
-    safe_results = []
-    for result in all_results:
-        safe_result = {
-            "filename": result["filename"],
-            "status": result["status"]
+    # レスポンスは最小限の情報のみ
+    return {
+        "results": all_results,
+        "summary": {
+            "total": len(files),
+            "success": success_count,
+            "errors": error_count
         }
-        if result["status"] == "success":
-            # dataをJSON安全な形式に変換
-            safe_result["data"] = result.get("data", [])
-        else:
-            safe_result["error"] = result.get("error", "Unknown error")
-        safe_results.append(safe_result)
-    
-    return {"results": safe_results}
+    }
 
 @app.delete("/delete/{record_id}")
 async def delete_record(record_id: str, u_id: str = Depends(get_current_user)):

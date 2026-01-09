@@ -427,9 +427,11 @@
                 
                 if (res.ok) {
                     const result = responseData;
+                    console.log('Upload result:', result);
                     
-                    const successCount = result.results.filter(r => r.status === 'success').length;
-                    const failCount = result.results.filter(r => r.status === 'error').length;
+                    // summaryがある場合はそれを使用
+                    const successCount = result.summary ? result.summary.success : result.results.filter(r => r.status === 'success').length;
+                    const failCount = result.summary ? result.summary.errors : result.results.filter(r => r.status === 'error').length;
                     
                     if (failCount > 0) {
                         const errors = result.results.filter(r => r.status === 'error');
