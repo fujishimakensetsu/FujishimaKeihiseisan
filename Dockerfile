@@ -14,9 +14,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # アプリケーションファイルをコピー
 COPY . .
 
-# サービスアカウントキーをコピー
-COPY gen-lang-client-0553940805-e017df0cff23.json /workspace/
-
 # ポートを公開
 EXPOSE 8080
 
