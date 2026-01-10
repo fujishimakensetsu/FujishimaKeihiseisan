@@ -23,30 +23,13 @@ except ImportError:
     PDF_SUPPORT = False
     print("警告: pdf2imageがインストールされていません。PDF画像化機能は無効です。")
 
-# .envファイルを読み込む
 load_dotenv()
-
-# ===== Google Cloud認証情報の設定 =====
-credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-if credentials_path:
-    # 相対パスの場合は絶対パスに変換
-    if not os.path.isabs(credentials_path):
-        credentials_path = os.path.join(os.getcwd(), credentials_path)
-    
-    # ファイルが存在するか確認
-    if os.path.exists(credentials_path):
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
-        print(f"✅ Google Cloud認証情報を設定しました: {credentials_path}")
-    else:
-        print(f"⚠️  警告: 認証情報ファイルが見つかりません: {credentials_path}")
-else:
-    print("⚠️  警告: GOOGLE_APPLICATION_CREDENTIALSが.envファイルに設定されていません")
 
 # --- 認証設定 ---
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-123")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 # Gemini 設定
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
@@ -314,20 +297,36 @@ async def root():
 @app.post("/login")
 async def login(email: str = Form(...), password: str = Form(...)):
     """ログイン（メールアドレス対応）"""
+    print(f"=== Login attempt ===")
+    print(f"Email: {email}")
+    
     # メールアドレスでユーザーを検索
     users = db.collection(COL_USERS).where("email", "==", email).limit(1).stream()
     user_list = list(users)
     
+    print(f"Users found: {len(user_list)}")
+    
     if not user_list:
+        print("❌ User not found")
         raise HTTPException(status_code=401, detail="メールアドレスまたはパスワードが正しくありません")
     
     user_doc = user_list[0]
     user_id = user_doc.id
     user_data = user_doc.to_dict()
     
-    if not pwd_context.verify(password, user_data["password"]):
+    print(f"User ID: {user_id}")
+    print(f"User email in DB: {user_data.get('email')}")
+    print(f"Password hash (first 20 chars): {user_data.get('password', '')[:20]}...")
+    
+    # パスワード検証
+    password_valid = pwd_context.verify(password, user_data["password"])
+    print(f"Password valid: {password_valid}")
+    
+    if not password_valid:
+        print("❌ Invalid password")
         raise HTTPException(status_code=401, detail="メールアドレスまたはパスワードが正しくありません")
     
+    print("✅ Login successful")
     token = create_access_token({"sub": user_id})
     return {"access_token": token, "token_type": "bearer", "user_id": user_id, "role": user_data.get("role", "user")}
 
@@ -871,45 +870,63 @@ async def get_all_users(admin_id: str = Depends(require_admin)):
 @app.post("/admin/users")
 async def create_user(data: dict, admin_id: str = Depends(require_admin)):
     """ユーザーを作成（管理者のみ）"""
+    print(f"=== Create User Request ===")
+    print(f"Admin ID: {admin_id}")
+    print(f"Data: {data}")
+    
     email = data.get("email")
     password = data.get("password")
     plan = data.get("plan", "free")
     
+    print(f"Email: {email}")
+    print(f"Password: {'***' if password else None}")
+    print(f"Plan: {plan}")
+    
     if not email or not password:
+        print("❌ Missing email or password")
         raise HTTPException(status_code=400, detail="メールアドレスとパスワードは必須です")
     
     # メールアドレスの重複チェック
     existing = db.collection(COL_USERS).where("email", "==", email).limit(1).stream()
-    if list(existing):
+    existing_list = list(existing)
+    print(f"Existing users: {len(existing_list)}")
+    
+    if existing_list:
+        print("❌ Email already exists")
         raise HTTPException(status_code=400, detail="このメールアドレスは既に登録されています")
     
     # ユーザーID生成
     user_id = generate_user_id()
+    print(f"Generated user ID: {user_id}")
     
     # プラン情報取得
     plan_info = PLANS.get(plan, PLANS["free"])
     
     # ユーザー作成
-    db.collection(COL_USERS).document(user_id).set({
-        "email": email,
-        "password": pwd_context.hash(password),
-        "role": "user",
-        "created_at": firestore.SERVER_TIMESTAMP,
-        "line_user_id": None,
-        "subscription": {
-            "plan": plan,
-            "status": "active",
-            "limit": plan_info["limit"],
-            "used": 0,
-            "stripe_customer_id": None,
-            "stripe_subscription_id": None,
-            "current_period_start": firestore.SERVER_TIMESTAMP,
-            "current_period_end": None,
-            "cancel_at_period_end": False
-        }
-    })
-    
-    return {"message": "ユーザーを作成しました", "user_id": user_id}
+    try:
+        db.collection(COL_USERS).document(user_id).set({
+            "email": email,
+            "password": pwd_context.hash(password),
+            "role": "user",
+            "created_at": firestore.SERVER_TIMESTAMP,
+            "line_user_id": None,
+            "subscription": {
+                "plan": plan,
+                "status": "active",
+                "limit": plan_info["limit"],
+                "used": 0,
+                "stripe_customer_id": None,
+                "stripe_subscription_id": None,
+                "current_period_start": firestore.SERVER_TIMESTAMP,
+                "current_period_end": None,
+                "cancel_at_period_end": False
+            }
+        })
+        print(f"✅ User created successfully: {user_id}")
+        return {"message": "ユーザーを作成しました", "user_id": user_id}
+    except Exception as e:
+        print(f"❌ Error creating user: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"ユーザー作成に失敗しました: {str(e)}")
 
 @app.delete("/admin/users/{user_id}")
 async def delete_user(user_id: str, admin_id: str = Depends(require_admin)):
@@ -1061,12 +1078,16 @@ def handle_text_message(event):
 @handler.add(MessageEvent, message=ImageMessage)
 def handle_image_message(event):
     """画像メッセージハンドラー（マルチユーザー対応）"""
+    print(f"=== LINE Image Message Received ===")
     line_user_id = event.source.user_id
+    print(f"LINE User ID: {line_user_id}")
     
     # LINE User IDからユーザーを検索
     user_id = get_user_by_line_id(line_user_id)
+    print(f"Found User ID: {user_id}")
     
     if not user_id:
+        print("❌ User not found")
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text="❌ LINE連携が完了していません。\n\nWebアプリにログインして、トークンを生成・送信してください。")
@@ -1075,6 +1096,7 @@ def handle_image_message(event):
     
     # 使用上限チェック
     if not check_usage_limit(user_id):
+        print("❌ Usage limit exceeded")
         line_bot_api.reply_message(
             event.reply_token,
             TextSendMessage(text="❌ 月間上限に達しました。\n\nWebアプリからプランをアップグレードしてください。")
@@ -1082,20 +1104,25 @@ def handle_image_message(event):
         return
     
     try:
+        print("📥 Downloading image...")
         # 画像をダウンロード
         message_content = line_bot_api.get_message_content(event.message.id)
         image_data = message_content.content
         
         # 一時保存
         temp_path = os.path.join(UPLOAD_DIR, f"line_{int(time.time())}.jpg")
+        print(f"Saving to: {temp_path}")
         with open(temp_path, "wb") as f:
             for chunk in image_data:
                 f.write(chunk)
         
+        print("☁️ Uploading to GCS...")
         # GCSにアップロード
         gcs_file_name = f"line_receipts/{int(time.time())}.jpg"
         public_url = upload_to_gcs(temp_path, gcs_file_name)
+        print(f"GCS URL: {public_url}")
         
+        print("🤖 Analyzing with Gemini...")
         # Gemini解析
         genai_file = genai.upload_file(path=temp_path)
         while genai_file.state.name == "PROCESSING":
@@ -1103,8 +1130,10 @@ def handle_image_message(event):
             genai_file = genai.get_file(genai_file.name)
         
         response = model.generate_content([genai_file, PROMPT])
+        print(f"Gemini response: {response.text[:100]}...")
         data_list = json.loads(response.text.strip().replace('```json', '').replace('```', ''))
         
+        print("💾 Saving to Firestore...")
         # サブコレクションに保存
         for item in (data_list if isinstance(data_list, list) else [data_list]):
             doc_id = str(int(time.time()*1000))
@@ -1127,6 +1156,7 @@ def handle_image_message(event):
         
         # 一時ファイル削除
         os.remove(temp_path)
+        print("✅ Processing complete")
         
         # 結果を通知
         result_text = "✅ 解析完了しました！\n\n"
@@ -1143,10 +1173,12 @@ def handle_image_message(event):
         )
         
     except Exception as e:
-        print(f"LINE画像処理エラー: {e}")
+        print(f"❌ LINE image processing error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         line_bot_api.reply_message(
             event.reply_token,
-            TextSendMessage(text="❌ 画像の解析に失敗しました。\n\n別の画像で再度お試しください。")
+            TextSendMessage(text=f"❌ 画像の解析に失敗しました。\n\nエラー: {str(e)}\n\n別の画像で再度お試しください。")
         )
 
 # ===== Stripe連携エンドポイント（将来実装） =====
