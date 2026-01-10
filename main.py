@@ -23,7 +23,24 @@ except ImportError:
     PDF_SUPPORT = False
     print("警告: pdf2imageがインストールされていません。PDF画像化機能は無効です。")
 
+# .envファイルを読み込む
 load_dotenv()
+
+# ===== Google Cloud認証情報の設定 =====
+credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+if credentials_path:
+    # 相対パスの場合は絶対パスに変換
+    if not os.path.isabs(credentials_path):
+        credentials_path = os.path.join(os.getcwd(), credentials_path)
+    
+    # ファイルが存在するか確認
+    if os.path.exists(credentials_path):
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
+        print(f"✅ Google Cloud認証情報を設定しました: {credentials_path}")
+    else:
+        print(f"⚠️  警告: 認証情報ファイルが見つかりません: {credentials_path}")
+else:
+    print("⚠️  警告: GOOGLE_APPLICATION_CREDENTIALSが.envファイルに設定されていません")
 
 # --- 認証設定 ---
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-123")
