@@ -14,14 +14,19 @@ router = APIRouter()
 @router.post("/login")
 async def login(email: str = Form(...), password: str = Form(...)):
     """ログイン（メールアドレス対応）"""
-    print(f"=== Login attempt ===")
-    print(f"Email: {email}")
+    print("=" * 60)
+    print("[LOGIN] Login attempt started")
+    print(f"[LOGIN] Email: {email}")
+    print(f"[LOGIN] Password length: {len(password)}")
 
     # メールアドレスでユーザーを検索
-    users = db.collection(config.COL_USERS).where("email", "==", email).limit(1).stream()
-    user_list = list(users)
-
-    print(f"Users found: {len(user_list)}")
+    try:
+        users = db.collection(config.COL_USERS).where("email", "==", email).limit(1).stream()
+        user_list = list(users)
+        print(f"[LOGIN] Users found: {len(user_list)}")
+    except Exception as e:
+        print(f"[ERROR] Database query failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="データベースエラーが発生しました")
 
     if not user_list:
         print("[ERROR] User not found")
@@ -31,24 +36,29 @@ async def login(email: str = Form(...), password: str = Form(...)):
     user_id = user_doc.id
     user_data = user_doc.to_dict()
 
-    print(f"User ID: {user_id}")
-    print(f"User email in DB: {user_data.get('email')}")
-    print(f"Password hash (first 20 chars): {user_data.get('password', '')[:20]}...")
+    print(f"[LOGIN] User ID: {user_id}")
+    print(f"[LOGIN] User email in DB: {user_data.get('email')}")
+    print(f"[LOGIN] User role: {user_data.get('role')}")
+    print(f"[LOGIN] Password hash type: {user_data.get('password', '')[:15]}...")
 
     # パスワード検証
     try:
         password_valid = verify_password(password, user_data["password"])
-        print(f"Password valid: {password_valid}")
+        print(f"[LOGIN] Password validation result: {password_valid}")
     except Exception as e:
-        print(f"[ERROR] Password verification failed: {str(e)}")
-        raise HTTPException(status_code=401, detail="メールアドレスまたはパスワードが正しくありません")
+        print(f"[ERROR] Password verification exception: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=401, detail="パスワード検証中にエラーが発生しました")
 
     if not password_valid:
-        print("[ERROR] Invalid password")
+        print("[ERROR] Invalid password - authentication failed")
         raise HTTPException(status_code=401, detail="メールアドレスまたはパスワードが正しくありません")
 
-    print("[OK] Login successful")
+    print("[OK] Login successful - generating token")
     token = create_access_token({"sub": user_id})
+    print(f"[OK] Token generated (first 20 chars): {token[:20]}...")
+    print("=" * 60)
     return {"access_token": token, "token_type": "bearer", "user_id": user_id, "role": user_data.get("role", "user")}
 
 @router.post("/register")

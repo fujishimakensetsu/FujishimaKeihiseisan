@@ -279,35 +279,49 @@
 
     <!-- 編集モーダル -->
     <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-[2rem] shadow-2xl max-w-md w-full p-8" onclick="event.stopPropagation()">
+        <div class="bg-white rounded-[2rem] shadow-2xl max-w-2xl w-full p-8" onclick="event.stopPropagation()">
             <h2 class="text-2xl font-bold mb-6">レコード編集</h2>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">日付</label>
-                    <input type="date" id="editDate" class="w-full p-3 bg-slate-50 border rounded-xl">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 左側：フォーム -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">日付 <span class="text-red-500">*</span></label>
+                        <input type="date" id="editDate" class="w-full p-3 bg-slate-50 border rounded-xl">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">店舗名 <span class="text-red-500">*</span></label>
+                        <input type="text" id="editVendor" class="w-full p-3 bg-slate-50 border rounded-xl" placeholder="店舗名を入力">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">金額（円） <span class="text-red-500">*</span></label>
+                        <input type="number" id="editAmount" class="w-full p-3 bg-slate-50 border rounded-xl" placeholder="金額を入力" min="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">カテゴリ</label>
+                        <select id="editCategory" class="w-full p-3 bg-slate-50 border rounded-xl">
+                            <option value="食費">🍽️ 食費</option>
+                            <option value="交通費">🚃 交通費</option>
+                            <option value="事務用品">🏢 事務用品</option>
+                            <option value="光熱費">💡 光熱費</option>
+                            <option value="通信費">📱 通信費</option>
+                            <option value="医療費">🏥 医療費</option>
+                            <option value="交際費">🎉 交際費</option>
+                            <option value="その他">📦 その他</option>
+                        </select>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">店舗名</label>
-                    <input type="text" id="editVendor" class="w-full p-3 bg-slate-50 border rounded-xl" placeholder="店舗名を入力">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">金額（円）</label>
-                    <input type="number" id="editAmount" class="w-full p-3 bg-slate-50 border rounded-xl" placeholder="金額を入力">
-                </div>
-                <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">カテゴリ</label>
-                    <select id="editCategory" class="w-full p-3 bg-slate-50 border rounded-xl">
-                        <option value="食費">🍽️ 食費</option>
-                        <option value="交通費">🚃 交通費</option>
-                        <option value="事務用品">🏢 事務用品</option>
-                        <option value="光熱費">💡 光熱費</option>
-                        <option value="通信費">📱 通信費</option>
-                        <option value="医療費">🏥 医療費</option>
-                        <option value="交際費">🎉 交際費</option>
-                        <option value="その他">📦 その他</option>
-                    </select>
+
+                <!-- 右側：画像プレビュー -->
+                <div class="flex flex-col">
+                    <label class="block text-sm font-bold text-slate-700 mb-2">レシート画像</label>
+                    <div id="editImagePreview" class="flex-1 bg-slate-100 rounded-xl overflow-hidden flex items-center justify-center min-h-[300px]">
+                        <img id="editPreviewImg" src="" alt="レシート画像" class="max-w-full max-h-full object-contain cursor-pointer" onclick="viewEditImage()">
+                        <p id="editNoImage" class="text-slate-400 hidden">画像なし</p>
+                    </div>
                 </div>
             </div>
+
             <div class="flex gap-3 mt-8">
                 <button onclick="saveEdit()" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition">
                     保存
@@ -456,7 +470,7 @@
 
         // ログイン
         async function login() {
-            const email = document.getElementById('loginEmail').value;
+            const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
 
             if (!email || !password) {
@@ -469,33 +483,41 @@
                 formData.append('email', email);
                 formData.append('password', password);
 
+                console.log('Attempting login...', { email });
+
                 const res = await fetch('/login', {
                     method: 'POST',
                     body: formData
                 });
 
+                console.log('Login response status:', res.status);
+
                 if (res.ok) {
                     const data = await res.json();
+                    console.log('Login successful', { role: data.role, user_id: data.user_id });
+
                     TOKEN = data.access_token;
                     USER_ROLE = data.role || 'user';
                     localStorage.setItem('token', TOKEN);
                     localStorage.setItem('role', USER_ROLE);
-                    
+
                     document.getElementById('authOverlay').classList.add('hidden');
                     document.getElementById('mainContent').classList.remove('hidden');
-                    
+
                     // 管理者の場合、管理者タブを表示
                     if (USER_ROLE === 'admin') {
                         document.getElementById('adminTabs').classList.remove('hidden');
                     }
-                    
+
                     await loadStatus();
                 } else {
-                    alert('ログインに失敗しました。メールアドレスとパスワードを確認してください。');
+                    const errorData = await res.json().catch(() => ({ detail: '不明なエラー' }));
+                    console.error('Login failed:', errorData);
+                    alert(`ログインに失敗しました: ${errorData.detail || 'メールアドレスとパスワードを確認してください。'}`);
                 }
             } catch (e) {
-                console.error(e);
-                alert('ログインエラーが発生しました');
+                console.error('Login error:', e);
+                alert(`ログインエラーが発生しました: ${e.message}`);
             }
         }
 
@@ -876,33 +898,77 @@
 
         // 編集モーダル
         function openEditModal(record) {
+            console.log('Opening edit modal for record:', record.id);
+
             editingRecordId = record.id;
             document.getElementById('editDate').value = record.date || '';
             document.getElementById('editVendor').value = record.vendor_name || '';
             document.getElementById('editAmount').value = record.total_amount || '';
             document.getElementById('editCategory').value = record.category || 'その他';
+
+            // 画像プレビューを表示
+            const previewImg = document.getElementById('editPreviewImg');
+            const noImage = document.getElementById('editNoImage');
+
+            if (record.image_url) {
+                previewImg.src = record.image_url;
+                previewImg.classList.remove('hidden');
+                noImage.classList.add('hidden');
+            } else {
+                previewImg.classList.add('hidden');
+                noImage.classList.remove('hidden');
+            }
+
             document.getElementById('editModal').classList.remove('hidden');
         }
 
         function closeEditModal() {
+            console.log('Closing edit modal');
             editingRecordId = null;
             document.getElementById('editModal').classList.add('hidden');
         }
 
+        function viewEditImage() {
+            const previewImg = document.getElementById('editPreviewImg');
+            if (previewImg.src && !previewImg.classList.contains('hidden')) {
+                // 画像モーダルを使って大きく表示
+                document.getElementById('modalImage').src = previewImg.src;
+                document.getElementById('pageInfo').textContent = '1 / 1';
+                document.getElementById('imageModal').classList.remove('hidden');
+            }
+        }
+
         async function saveEdit() {
-            if (!editingRecordId) return;
-
-            const date = document.getElementById('editDate').value;
-            const vendor = document.getElementById('editVendor').value;
-            const amount = document.getElementById('editAmount').value;
-            const category = document.getElementById('editCategory').value;
-
-            if (!date || !vendor || !amount) {
-                alert('日付、店舗名、金額は必須項目です');
+            if (!editingRecordId) {
+                console.error('No record ID set for editing');
                 return;
             }
 
-            showLoading('更新中...', '');
+            const date = document.getElementById('editDate').value.trim();
+            const vendor = document.getElementById('editVendor').value.trim();
+            const amount = document.getElementById('editAmount').value;
+            const category = document.getElementById('editCategory').value;
+
+            console.log('Saving edit:', { record_id: editingRecordId, date, vendor, amount, category });
+
+            // バリデーション
+            if (!date) {
+                alert('日付を入力してください');
+                document.getElementById('editDate').focus();
+                return;
+            }
+            if (!vendor) {
+                alert('店舗名を入力してください');
+                document.getElementById('editVendor').focus();
+                return;
+            }
+            if (!amount || amount <= 0) {
+                alert('金額を正しく入力してください（0より大きい値）');
+                document.getElementById('editAmount').focus();
+                return;
+            }
+
+            showLoading('更新中...', 'レコード情報を保存しています');
 
             try {
                 const res = await authFetch(`/api/records/${editingRecordId}`, {
@@ -916,17 +982,22 @@
                     })
                 });
 
+                console.log('Save response status:', res.status);
+
                 if (res.ok) {
+                    const data = await res.json();
+                    console.log('Save successful:', data);
                     alert('更新しました');
                     closeEditModal();
                     await loadStatus();
                 } else {
-                    const error = await res.json();
+                    const error = await res.json().catch(() => ({ detail: '不明なエラー' }));
+                    console.error('Save failed:', error);
                     alert(`更新に失敗しました: ${error.detail}`);
                 }
             } catch (e) {
-                console.error(e);
-                alert('更新に失敗しました');
+                console.error('Save error:', e);
+                alert(`更新エラーが発生しました: ${e.message}`);
             } finally {
                 hideLoading();
             }
@@ -1283,16 +1354,57 @@
         }
 
         // 初期化
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
+            console.log('Page loaded, checking authentication...');
+            console.log('Stored token:', TOKEN ? 'exists' : 'none');
+            console.log('Stored role:', USER_ROLE);
+
             if (TOKEN) {
-                document.getElementById('authOverlay').classList.add('hidden');
-                document.getElementById('mainContent').classList.remove('hidden');
-                
-                if (USER_ROLE === 'admin') {
-                    document.getElementById('adminTabs').classList.remove('hidden');
+                try {
+                    // トークンの有効性を確認
+                    const res = await authFetch('/api/status');
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        console.log('Token is valid, user authenticated:', data.email);
+
+                        // ロールを更新（サーバーから取得した最新の情報を使用）
+                        USER_ROLE = data.role || 'user';
+                        localStorage.setItem('role', USER_ROLE);
+
+                        document.getElementById('authOverlay').classList.add('hidden');
+                        document.getElementById('mainContent').classList.remove('hidden');
+
+                        if (USER_ROLE === 'admin') {
+                            document.getElementById('adminTabs').classList.remove('hidden');
+                        }
+
+                        await loadStatus();
+                    } else {
+                        console.warn('Token validation failed, clearing stored credentials');
+                        // トークンが無効な場合はクリア
+                        TOKEN = '';
+                        USER_ROLE = 'user';
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('role');
+                        // ログイン画面を表示
+                        document.getElementById('authOverlay').classList.remove('hidden');
+                        document.getElementById('mainContent').classList.add('hidden');
+                    }
+                } catch (e) {
+                    console.error('Error validating token:', e);
+                    // エラーが発生した場合もクリア
+                    TOKEN = '';
+                    USER_ROLE = 'user';
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('role');
+                    document.getElementById('authOverlay').classList.remove('hidden');
+                    document.getElementById('mainContent').classList.add('hidden');
                 }
-                
-                loadStatus();
+            } else {
+                console.log('No token found, showing login screen');
+                document.getElementById('authOverlay').classList.remove('hidden');
+                document.getElementById('mainContent').classList.add('hidden');
             }
         });
     </script>
