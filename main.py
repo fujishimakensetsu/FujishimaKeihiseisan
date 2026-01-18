@@ -6,6 +6,7 @@ import os
 from fastapi import FastAPI
 from fastapi.responses import FileResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 # 設定とデータベース初期化
 import config
@@ -17,9 +18,13 @@ from routers import auth, records, line, export, admin
 # ディレクトリ作成
 os.makedirs(config.UPLOAD_DIR, exist_ok=True)
 os.makedirs(config.FONT_DIR, exist_ok=True)
+os.makedirs("static", exist_ok=True)
 
 # FastAPI アプリケーション初期化
 app = FastAPI(title="SmartBuilder AI", version="2.0.0")
+
+# 静的ファイルの配信
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # CORS設定
 app.add_middleware(

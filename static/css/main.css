@@ -1,0 +1,32 @@
+/* SmartBuilder AI - メインスタイル */
+
+/* ベーススタイル */
+.hidden {
+    display: none !important;
+}
+
+/* アニメーション */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* ドロップゾーン */
+.drop-zone {
+    border: 3px dashed #cbd5e1;
+    transition: all 0.3s ease;
+}
+
+.drop-zone.dragover {
+    border-color: #3b82f6;
+    background-color: #eff6ff;
+}
+
+/* タブスタイル */
+.tab-active {
+    background-color: white;
+    border-bottom: 3px solid #3b82f6;
+}
