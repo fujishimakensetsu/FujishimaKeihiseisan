@@ -364,6 +364,39 @@
         </div>
     </div>
 
+    <!-- プラン変更モーダル -->
+    <div id="changePlanModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2rem] shadow-2xl max-w-md w-full p-8">
+            <h2 class="text-2xl font-bold mb-6">プラン変更</h2>
+
+            <div class="mb-6">
+                <p class="text-sm text-slate-600 mb-2">ユーザー</p>
+                <p class="font-bold text-lg" id="changePlanEmail"></p>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-sm font-bold text-slate-700 mb-2">新しいプラン</label>
+                <select id="newPlanSelect" class="w-full p-3 bg-slate-50 border rounded-xl">
+                    <option value="free">無料プラン (10件/月)</option>
+                    <option value="premium">プレミアムプラン (100件/月)</option>
+                    <option value="enterprise">エンタープライズプラン (1,000件/月)</option>
+                    <option value="unlimited">無制限プラン</option>
+                </select>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="closeChangePlanModal()"
+                        class="flex-1 bg-slate-100 text-slate-700 px-6 py-3 rounded-xl font-bold hover:bg-slate-200 transition">
+                    キャンセル
+                </button>
+                <button onclick="confirmChangePlan()"
+                        class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition">
+                    変更する
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // グローバル変数
         let TOKEN = localStorage.getItem('token') || '';
@@ -1083,33 +1116,51 @@
                 const data = await res.json();
 
                 const usersList = document.getElementById('usersList');
+
+                if (!data.users || data.users.length === 0) {
+                    usersList.innerHTML = `
+                        <div class="text-center py-8 text-slate-400">
+                            <p>登録されているユーザーはいません</p>
+                        </div>
+                    `;
+                    return;
+                }
+
                 usersList.innerHTML = data.users.map(user => {
                     const sub = user.subscription || {};
-                    const planName = {
-                        'free': '無料',
-                        'premium': 'プレミアム',
-                        'enterprise': 'エンタープライズ',
-                        'unlimited': '無制限'
-                    }[sub.plan] || sub.plan;
+                    const planNames = {
+                        'free': '無料プラン',
+                        'premium': 'プレミアムプラン',
+                        'enterprise': 'エンタープライズプラン',
+                        'unlimited': '無制限プラン'
+                    };
+                    const planName = planNames[sub.plan] || sub.plan;
+                    const roleLabel = user.role === 'admin' ? '🔑 管理者' : '👤 ユーザー';
+                    const used = sub.used || 0;
+                    const limit = sub.limit || 10;
 
                     return `
-                    <div class="border rounded-xl p-4 flex justify-between items-center">
-                        <div>
-                            <p class="font-bold">${user.email}</p>
-                            <p class="text-sm text-slate-600">プラン: ${planName} (${sub.used || 0}/${sub.limit || 0}件)</p>
-                            ${user.line_user_id ? '<p class="text-xs text-green-600">✅ LINE連携済み</p>' : ''}
+                    <div class="bg-slate-50 p-6 rounded-xl flex justify-between items-center">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-2">
+                                <p class="font-bold text-lg">${user.email}</p>
+                                <span class="text-xs bg-slate-200 px-3 py-1 rounded-full">${roleLabel}</span>
+                            </div>
+                            <p class="text-sm text-slate-600 mb-1">プラン: ${planName}</p>
+                            <p class="text-sm text-slate-500">使用状況: ${used} / ${limit}件</p>
+                            ${user.line_user_id ? '<p class="text-xs text-green-600 mt-1">✅ LINE連携済み</p>' : ''}
                         </div>
-                        <div class="flex gap-2">
-                            ${user.id !== 'admin' ? `
-                                <button onclick="changePlan('${user.id}')" 
-                                        class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-sm font-bold">
+                        <div class="flex gap-3">
+                            ${user.role !== 'admin' ? `
+                                <button onclick="changePlan('${user.id}', '${user.email}', '${sub.plan || 'free'}')"
+                                        class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-100 transition">
                                     プラン変更
                                 </button>
-                                <button onclick="deleteUser('${user.id}', '${user.email}')" 
-                                        class="bg-red-50 text-red-600 px-4 py-2 rounded-xl text-sm font-bold">
+                                <button onclick="deleteUser('${user.id}', '${user.email}')"
+                                        class="bg-red-50 text-red-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-red-100 transition">
                                     削除
                                 </button>
-                            ` : '<span class="text-xs text-slate-400">管理者</span>'}
+                            ` : '<span class="text-slate-400 text-sm px-4 py-2">管理者は削除不可</span>'}
                         </div>
                     </div>
                     `;
@@ -1159,29 +1210,53 @@
             }
         }
 
-        async function changePlan(userId) {
-            const plan = prompt('プランを選択してください:\nfree / premium / enterprise');
-            if (!plan || !['free', 'premium', 'enterprise'].includes(plan)) {
-                alert('無効なプランです');
-                return;
-            }
+        // プラン変更用のグローバル変数
+        let changingUserId = null;
+        let changingUserEmail = null;
+
+        // プラン変更モーダルを表示
+        function changePlan(userId, email, currentPlan) {
+            changingUserId = userId;
+            changingUserEmail = email;
+            document.getElementById('changePlanEmail').textContent = email;
+            document.getElementById('newPlanSelect').value = currentPlan || 'free';
+            document.getElementById('changePlanModal').classList.remove('hidden');
+        }
+
+        // プラン変更モーダルを閉じる
+        function closeChangePlanModal() {
+            changingUserId = null;
+            changingUserEmail = null;
+            document.getElementById('changePlanModal').classList.add('hidden');
+        }
+
+        // プラン変更を実行
+        async function confirmChangePlan() {
+            if (!changingUserId) return;
+
+            const newPlan = document.getElementById('newPlanSelect').value;
+            showLoading('プランを変更中...', '');
 
             try {
-                const res = await authFetch(`/admin/users/${userId}/subscription`, {
+                const res = await authFetch(`/admin/users/${changingUserId}/plan`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ plan })
+                    body: JSON.stringify({ plan: newPlan })
                 });
 
                 if (res.ok) {
                     alert('プランを変更しました');
+                    closeChangePlanModal();
                     loadUsers();
                 } else {
-                    alert('プラン変更に失敗しました');
+                    const error = await res.json();
+                    alert(`プラン変更に失敗しました: ${error.detail}`);
                 }
             } catch (e) {
                 console.error(e);
                 alert('プラン変更に失敗しました');
+            } finally {
+                hideLoading();
             }
         }
 
