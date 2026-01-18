@@ -33,3 +33,6 @@ Thumbs.db
 
 # 追加
 ngrok.exe
+
+# --- Claude Code キャッシュ ---
+.claude/
