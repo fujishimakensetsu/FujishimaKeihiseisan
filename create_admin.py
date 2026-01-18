@@ -13,7 +13,7 @@ if credentials_path:
     os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials_path
 
 db = firestore.Client()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 # adminユーザーを作成
 admin_ref = db.collection("users").document("admin")
@@ -48,7 +48,7 @@ admin_ref.set({
     }
 })
 
-print("✅ adminユーザーを作成しました")
+print("[OK] adminユーザーを作成しました")
 print("メールアドレス: admin@smartbuilder.ai")
 print("パスワード: password")
 
@@ -61,4 +61,4 @@ if doc.exists:
     print(f"  - Role: {data.get('role')}")
     print(f"  - Password (ハッシュ): {data.get('password')[:50]}...")
 else:
-    print("❌ エラー: ユーザーが作成されませんでした")
+    print("[ERROR] エラー: ユーザーが作成されませんでした")

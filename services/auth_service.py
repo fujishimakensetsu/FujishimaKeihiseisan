@@ -16,12 +16,21 @@ def create_access_token(data: dict) -> str:
     return jwt.encode(to_encode, config.SECRET_KEY, algorithm=config.ALGORITHM)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """パスワードを検証"""
-    return pwd_context.verify(plain_password, hashed_password)
+    """パスワードを検証（bcryptの72バイト制限に対応）"""
+    # bcryptは72バイトまでしか処理できないため、パスワードを切り詰める
+    truncated_password = plain_password[:72] if len(plain_password.encode('utf-8')) > 72 else plain_password
+    try:
+        return pwd_context.verify(truncated_password, hashed_password)
+    except ValueError as e:
+        # bcryptのエラーが発生した場合はFalseを返す
+        print(f"[WARNING] Password verification error: {str(e)}")
+        return False
 
 def hash_password(password: str) -> str:
-    """パスワードをハッシュ化"""
-    return pwd_context.hash(password)
+    """パスワードをハッシュ化（bcryptの72バイト制限に対応）"""
+    # bcryptは72バイトまでしか処理できないため、パスワードを切り詰める
+    truncated_password = password[:72] if len(password.encode('utf-8')) > 72 else password
+    return pwd_context.hash(truncated_password)
 
 async def get_current_user(request: Request) -> str:
     """現在のユーザーIDをトークンから取得"""

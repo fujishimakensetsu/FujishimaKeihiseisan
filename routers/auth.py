@@ -24,7 +24,7 @@ async def login(email: str = Form(...), password: str = Form(...)):
     print(f"Users found: {len(user_list)}")
 
     if not user_list:
-        print("❌ User not found")
+        print("[ERROR] User not found")
         raise HTTPException(status_code=401, detail="メールアドレスまたはパスワードが正しくありません")
 
     user_doc = user_list[0]
@@ -36,14 +36,18 @@ async def login(email: str = Form(...), password: str = Form(...)):
     print(f"Password hash (first 20 chars): {user_data.get('password', '')[:20]}...")
 
     # パスワード検証
-    password_valid = verify_password(password, user_data["password"])
-    print(f"Password valid: {password_valid}")
-
-    if not password_valid:
-        print("❌ Invalid password")
+    try:
+        password_valid = verify_password(password, user_data["password"])
+        print(f"Password valid: {password_valid}")
+    except Exception as e:
+        print(f"[ERROR] Password verification failed: {str(e)}")
         raise HTTPException(status_code=401, detail="メールアドレスまたはパスワードが正しくありません")
 
-    print("✅ Login successful")
+    if not password_valid:
+        print("[ERROR] Invalid password")
+        raise HTTPException(status_code=401, detail="メールアドレスまたはパスワードが正しくありません")
+
+    print("[OK] Login successful")
     token = create_access_token({"sub": user_id})
     return {"access_token": token, "token_type": "bearer", "user_id": user_id, "role": user_data.get("role", "user")}
 

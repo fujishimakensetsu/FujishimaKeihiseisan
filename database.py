@@ -11,8 +11,8 @@ db = firestore.Client()
 storage_client = storage.Client()
 
 # === パスワードハッシュ設定 ===
-# pbkdf2_sha256を優先、bcryptも下位互換性のためサポート
-pwd_context = CryptContext(schemes=["pbkdf2_sha256", "bcrypt"], deprecated="auto")
+# pbkdf2_sha256を使用（Windows環境でbcryptのビルド問題を回避）
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 def init_admin():
     """管理者アカウントの初期化（マルチユーザー構造）"""
