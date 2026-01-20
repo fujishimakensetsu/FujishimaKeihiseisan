@@ -6,151 +6,391 @@
     <title>SmartBuilder AI</title>
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
-    <!-- Tailwind CSS CDN (開発・プロトタイプ用) -->
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // Tailwind CSS警告を非表示
         tailwind.config = {
             theme: {
-                extend: {}
+                extend: {
+                    fontFamily: {
+                        'display': ['Outfit', 'sans-serif'],
+                        'body': ['Noto Sans JP', 'sans-serif'],
+                    },
+                    colors: {
+                        'dark': {
+                            900: '#0a0a0f',
+                            800: '#12121a',
+                            700: '#1a1a25',
+                            600: '#252532',
+                            500: '#32324a',
+                        },
+                        'accent': {
+                            cyan: '#00d4ff',
+                            emerald: '#10b981',
+                            violet: '#8b5cf6',
+                        }
+                    },
+                    animation: {
+                        'glow': 'glow 2s ease-in-out infinite alternate',
+                        'float': 'float 6s ease-in-out infinite',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'fade-in': 'fadeIn 0.3s ease-out',
+                        'pulse-soft': 'pulseSoft 2s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        glow: {
+                            '0%': { boxShadow: '0 0 20px rgba(0, 212, 255, 0.3)' },
+                            '100%': { boxShadow: '0 0 40px rgba(0, 212, 255, 0.6)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        pulseSoft: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0.7' },
+                        },
+                    }
+                }
             }
         }
     </script>
     <style>
+        * {
+            font-family: 'Noto Sans JP', sans-serif;
+        }
+
+        h1, h2, h3, .font-display {
+            font-family: 'Outfit', sans-serif;
+        }
+
         .hidden { display: none !important; }
-        
+
+        /* グラデーション背景 */
+        .bg-gradient-dark {
+            background: linear-gradient(135deg, #0a0a0f 0%, #12121a 50%, #1a1025 100%);
+        }
+
+        /* ガラスモーフィズム */
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-light {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        /* グラデーションテキスト */
+        .text-gradient {
+            background: linear-gradient(135deg, #00d4ff 0%, #10b981 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ボタングラデーション */
+        .btn-gradient {
+            background: linear-gradient(135deg, #00d4ff 0%, #10b981 100%);
+            transition: all 0.3s ease;
+        }
+
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* インプットスタイル */
+        .input-modern {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .input-modern:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        }
+
+        .input-light {
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .input-light:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        }
+
+        /* カードスタイル */
+        .card-dark {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.3s ease;
+        }
+
+        .card-dark:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* スピナー */
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
         .animate-spin {
             animation: spin 1s linear infinite;
         }
-        
+
+        /* ドロップゾーン */
         .drop-zone {
-            border: 3px dashed #cbd5e1;
+            border: 2px dashed rgba(0, 212, 255, 0.3);
             transition: all 0.3s ease;
         }
-        .drop-zone.dragover {
-            border-color: #3b82f6;
-            background-color: #eff6ff;
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.05);
         }
-        
+
         /* タブスタイル */
         .tab-active {
-            background-color: white;
-            border-bottom: 3px solid #3b82f6;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(16, 185, 129, 0.2) 100%);
+            border-color: rgba(0, 212, 255, 0.5);
+        }
+
+        /* プログレスバー */
+        .progress-gradient {
+            background: linear-gradient(90deg, #00d4ff 0%, #10b981 100%);
+        }
+
+        /* スクロールバー */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* 背景装飾 */
+        .bg-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* レコードカード */
+        .record-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            transition: all 0.3s ease;
+        }
+
+        .record-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(0, 212, 255, 0.3);
         }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
-    
+<body class="bg-gradient-dark min-h-screen text-white">
+
+    <!-- 背景装飾 -->
+    <div class="bg-orb w-96 h-96 bg-cyan-500 top-0 left-0"></div>
+    <div class="bg-orb w-80 h-80 bg-emerald-500 bottom-0 right-0"></div>
+    <div class="bg-orb w-64 h-64 bg-violet-500 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
+
     <!-- ログイン・登録オーバーレイ -->
-    <div id="authOverlay" class="fixed inset-0 bg-slate-900 z-[100] flex items-center justify-center p-6">
-        <div class="bg-white w-full max-w-md p-10 rounded-[2.5rem] shadow-2xl">
-            <h2 class="text-3xl font-black mb-6 text-center">SmartBuilder AI</h2>
-            
+    <div id="authOverlay" class="fixed inset-0 bg-gradient-dark z-[100] flex items-center justify-center p-6">
+        <div class="glass-light w-full max-w-md p-10 rounded-3xl shadow-2xl animate-slide-up">
+            <!-- ロゴ -->
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-emerald-500 mb-4 animate-float">
+                    <span class="text-3xl">🤖</span>
+                </div>
+                <h2 class="font-display text-3xl font-bold text-gray-900">SmartBuilder AI</h2>
+                <p class="text-gray-500 mt-2 text-sm">領収書管理をスマートに</p>
+            </div>
+
             <!-- タブ切り替え -->
-            <div class="flex gap-2 mb-6">
-                <button id="loginTab" onclick="switchAuthTab('login')" 
-                        class="flex-1 py-3 rounded-xl font-bold tab-active">
+            <div class="flex gap-2 mb-8 p-1 bg-gray-100 rounded-2xl">
+                <button id="loginTab" onclick="switchAuthTab('login')"
+                        class="flex-1 py-3 rounded-xl font-semibold text-sm transition-all duration-300 bg-white text-gray-900 shadow-sm">
                     ログイン
                 </button>
-                <button id="registerTab" onclick="switchAuthTab('register')" 
-                        class="flex-1 py-3 rounded-xl font-bold bg-slate-100">
+                <button id="registerTab" onclick="switchAuthTab('register')"
+                        class="flex-1 py-3 rounded-xl font-semibold text-sm transition-all duration-300 text-gray-500 hover:text-gray-700">
                     新規登録
                 </button>
             </div>
-            
+
             <!-- ログインフォーム -->
-            <div id="loginForm">
-                <input type="email" id="loginEmail" placeholder="メールアドレス" 
-                       class="w-full p-4 mb-4 bg-slate-50 border rounded-2xl">
-                <input type="password" id="loginPassword" placeholder="パスワード" 
-                       class="w-full p-4 mb-6 bg-slate-50 border rounded-2xl">
-                <button onclick="login()" 
-                        class="w-full bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-slate-800 transition">
+            <div id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">メールアドレス</label>
+                    <input type="email" id="loginEmail" placeholder="your@email.com"
+                           class="w-full p-4 rounded-xl input-light text-gray-900 placeholder-gray-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">パスワード</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••"
+                           class="w-full p-4 rounded-xl input-light text-gray-900 placeholder-gray-400">
+                </div>
+                <button onclick="login()"
+                        class="w-full btn-gradient text-white font-bold py-4 rounded-xl mt-6">
                     ログイン
                 </button>
             </div>
-            
+
             <!-- 登録フォーム -->
-            <div id="registerForm" class="hidden">
-                <input type="email" id="registerEmail" placeholder="メールアドレス" 
-                       class="w-full p-4 mb-4 bg-slate-50 border rounded-2xl">
-                <input type="password" id="registerPassword" placeholder="パスワード（8文字以上）" 
-                       class="w-full p-4 mb-4 bg-slate-50 border rounded-2xl">
-                <input type="password" id="registerPasswordConfirm" placeholder="パスワード（確認）" 
-                       class="w-full p-4 mb-6 bg-slate-50 border rounded-2xl">
-                <button onclick="register()" 
-                        class="w-full bg-blue-600 text-white font-bold py-4 rounded-2xl hover:bg-blue-700 transition">
-                    新規登録
+            <div id="registerForm" class="hidden space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">メールアドレス</label>
+                    <input type="email" id="registerEmail" placeholder="your@email.com"
+                           class="w-full p-4 rounded-xl input-light text-gray-900 placeholder-gray-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">パスワード（8文字以上）</label>
+                    <input type="password" id="registerPassword" placeholder="••••••••"
+                           class="w-full p-4 rounded-xl input-light text-gray-900 placeholder-gray-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">パスワード（確認）</label>
+                    <input type="password" id="registerPasswordConfirm" placeholder="••••••••"
+                           class="w-full p-4 rounded-xl input-light text-gray-900 placeholder-gray-400">
+                </div>
+                <button onclick="register()"
+                        class="w-full btn-gradient text-white font-bold py-4 rounded-xl mt-6">
+                    アカウント作成
                 </button>
             </div>
         </div>
     </div>
 
     <!-- ローディングオーバーレイ -->
-    <div id="loadingOverlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-        <div class="bg-white p-10 rounded-[2.5rem] shadow-2xl text-center max-w-sm">
-            <div class="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-            <p class="text-xl font-bold text-slate-900 mb-2" id="loadingMessage">処理中...</p>
-            <p class="text-sm text-slate-500" id="loadingSubtext">しばらくお待ちください</p>
+    <div id="loadingOverlay" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div class="glass p-10 rounded-3xl shadow-2xl text-center max-w-sm animate-fade-in">
+            <div class="w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+            <p class="text-xl font-semibold text-white mb-2" id="loadingMessage">処理中...</p>
+            <p class="text-sm text-gray-400" id="loadingSubtext">しばらくお待ちください</p>
         </div>
     </div>
 
     <!-- メインコンテンツ -->
-    <div id="mainContent" class="hidden container mx-auto p-8 max-w-6xl">
-        
+    <div id="mainContent" class="hidden container mx-auto p-6 md:p-8 max-w-6xl animate-fade-in">
+
         <!-- ヘッダー -->
-        <header class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-black">SmartBuilder AI</h1>
-            <div class="flex items-center gap-4">
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center">
+                    <span class="text-xl">🤖</span>
+                </div>
+                <h1 class="font-display text-2xl font-bold text-gradient">SmartBuilder AI</h1>
+            </div>
+            <div class="flex items-center gap-3 flex-wrap justify-center">
                 <!-- 管理者用タブ -->
                 <div id="adminTabs" class="hidden flex gap-2">
                     <button onclick="switchMainTab('dashboard')" id="dashboardTabBtn"
-                            class="px-4 py-2 rounded-xl font-bold bg-white border">
-                        領収書管理
+                            class="px-4 py-2 rounded-xl font-medium text-sm glass tab-active">
+                        📊 領収書管理
                     </button>
                     <button onclick="switchMainTab('admin')" id="adminTabBtn"
-                            class="px-4 py-2 rounded-xl font-bold bg-slate-100">
-                        ユーザー管理
+                            class="px-4 py-2 rounded-xl font-medium text-sm btn-secondary text-gray-300">
+                        👥 ユーザー管理
                     </button>
                 </div>
-                
-                <button onclick="loadStatus()" class="bg-white border px-4 py-2 rounded-xl text-sm font-bold">更新</button>
-                <button onclick="logout()" class="text-red-500 font-bold">ログアウト</button>
+
+                <button onclick="loadStatus()" class="btn-secondary px-4 py-2 rounded-xl text-sm font-medium text-gray-300 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    更新
+                </button>
+                <button onclick="logout()" class="text-red-400 hover:text-red-300 font-medium text-sm transition-colors">
+                    ログアウト
+                </button>
             </div>
         </header>
 
         <!-- ダッシュボードタブ -->
-        <div id="dashboardTab">
-            
+        <div id="dashboardTab" class="space-y-6">
+
             <!-- サブスク情報 -->
-            <div id="subscriptionInfo" class="bg-white p-6 rounded-2xl shadow-sm mb-6">
+            <div id="subscriptionInfo" class="glass p-6 rounded-2xl">
                 <!-- JavaScriptで動的に生成 -->
             </div>
 
             <!-- LINE連携 -->
-            <div id="lineConnectionArea" class="bg-white p-6 rounded-2xl shadow-sm mb-6">
-                <h3 class="text-xl font-bold mb-4">🔗 LINE連携</h3>
+            <div id="lineConnectionArea" class="glass p-6 rounded-2xl">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
+                        <span class="text-xl">💬</span>
+                    </div>
+                    <h3 class="font-display text-lg font-semibold">LINE連携</h3>
+                </div>
                 <div id="lineConnected" class="hidden">
-                    <p class="text-green-600 mb-4">✅ LINE連携済み</p>
-                    <button onclick="disconnectLine()" class="bg-red-50 text-red-600 px-4 py-2 rounded-xl font-bold">
+                    <div class="flex items-center gap-2 text-emerald-400 mb-4">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        <span class="font-medium">LINE連携済み</span>
+                    </div>
+                    <button onclick="disconnectLine()" class="px-4 py-2 rounded-xl text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition-colors">
                         連携を解除
                     </button>
                 </div>
                 <div id="lineNotConnected">
-                    <p class="text-slate-600 mb-4">LINEと連携すると、画像を送信するだけで自動解析できます</p>
-                    <button onclick="generateLineToken()" class="bg-green-600 text-white px-6 py-3 rounded-xl font-bold">
+                    <p class="text-gray-400 text-sm mb-4">LINEと連携すると、画像を送信するだけで自動解析できます</p>
+                    <button onclick="generateLineToken()" class="btn-gradient px-6 py-3 rounded-xl font-semibold text-sm">
                         トークンを生成
                     </button>
-                    <div id="lineTokenDisplay" class="hidden mt-4 p-4 bg-slate-50 rounded-xl">
-                        <p class="text-sm text-slate-600 mb-2">以下のトークンをLINEで送信してください:</p>
+                    <div id="lineTokenDisplay" class="hidden mt-4 p-4 glass rounded-xl">
+                        <p class="text-sm text-gray-400 mb-2">以下のトークンをLINEで送信してください:</p>
                         <div class="flex gap-2 items-center">
-                            <code id="lineToken" class="text-2xl font-mono font-bold flex-1 text-center p-3 bg-white rounded-xl">
+                            <code id="lineToken" class="text-2xl font-mono font-bold flex-1 text-center p-3 bg-white/5 rounded-xl text-cyan-400">
                                 --------
                             </code>
-                            <button onclick="copyToken()" class="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold">
+                            <button onclick="copyToken()" class="btn-gradient px-4 py-3 rounded-xl font-semibold text-sm">
                                 コピー
                             </button>
                         </div>
@@ -159,30 +399,36 @@
             </div>
 
             <!-- 検索・フィルター -->
-            <div class="bg-white p-6 rounded-[2rem] shadow-sm mb-6">
+            <div class="glass p-6 rounded-2xl">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
+                        <span class="text-xl">🔍</span>
+                    </div>
+                    <h3 class="font-display text-lg font-semibold">検索・フィルター</h3>
+                </div>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2">🔍 店舗名検索</label>
-                        <input type="text" id="searchVendor" placeholder="店舗名を入力" 
-                               class="w-full p-3 bg-slate-50 border rounded-xl"
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">店舗名検索</label>
+                        <input type="text" id="searchVendor" placeholder="店舗名を入力"
+                               class="w-full p-3 rounded-xl input-modern text-white placeholder-gray-500"
                                oninput="applyFilters()">
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2">📅 開始日</label>
-                        <input type="date" id="filterStartDate" 
-                               class="w-full p-3 bg-slate-50 border rounded-xl"
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">開始日</label>
+                        <input type="date" id="filterStartDate"
+                               class="w-full p-3 rounded-xl input-modern text-white"
                                onchange="applyFilters()">
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2">📅 終了日</label>
-                        <input type="date" id="filterEndDate" 
-                               class="w-full p-3 bg-slate-50 border rounded-xl"
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">終了日</label>
+                        <input type="date" id="filterEndDate"
+                               class="w-full p-3 rounded-xl input-modern text-white"
                                onchange="applyFilters()">
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2">🏷️ カテゴリ</label>
-                        <select id="filterCategory" 
-                                class="w-full p-3 bg-slate-50 border rounded-xl"
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">カテゴリ</label>
+                        <select id="filterCategory"
+                                class="w-full p-3 rounded-xl input-modern text-white"
                                 onchange="applyFilters()">
                             <option value="">すべて</option>
                             <option value="食費">🍽️ 食費</option>
@@ -197,96 +443,112 @@
                     </div>
                 </div>
                 <div class="mt-4 flex justify-end">
-                    <button onclick="clearFilters()" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-300 transition">
+                    <button onclick="clearFilters()" class="btn-secondary px-4 py-2 rounded-xl text-sm font-medium text-gray-400 hover:text-white transition-colors">
                         フィルターをクリア
                     </button>
                 </div>
             </div>
 
             <!-- アップロードエリア -->
-            <div class="bg-white p-8 rounded-[2rem] shadow-sm mb-6 drop-zone" id="dropZone">
+            <div class="glass p-8 rounded-2xl drop-zone cursor-pointer" id="dropZone" onclick="document.getElementById('fileInput').click()">
                 <div class="text-center">
-                    <p class="text-2xl font-bold mb-2">📄 領収書をアップロード</p>
-                    <p class="text-slate-500 mb-6">ファイルをドラッグ＆ドロップ または クリックして選択</p>
+                    <div class="w-16 h-16 rounded-2xl bg-cyan-500/20 flex items-center justify-center mx-auto mb-4 animate-pulse-soft">
+                        <span class="text-3xl">📄</span>
+                    </div>
+                    <p class="font-display text-xl font-semibold mb-2">領収書をアップロード</p>
+                    <p class="text-gray-400 text-sm mb-6">ファイルをドラッグ＆ドロップ または クリックして選択</p>
                     <input type="file" id="fileInput" accept="image/*,.pdf" multiple class="hidden">
-                    <button onclick="document.getElementById('fileInput').click()" 
-                            class="bg-blue-600 text-white font-bold px-8 py-4 rounded-2xl hover:bg-blue-700 transition">
+                    <button onclick="event.stopPropagation(); document.getElementById('fileInput').click()"
+                            class="btn-gradient font-semibold px-8 py-3 rounded-xl">
                         ファイルを選択
                     </button>
-                    <p class="text-xs text-slate-400 mt-4">対応形式: JPG, PNG, PDF / 複数選択可能</p>
+                    <p class="text-xs text-gray-500 mt-4">対応形式: JPG, PNG, PDF / 複数選択可能</p>
                 </div>
             </div>
 
             <!-- エクスポート&一括操作 -->
-            <div class="flex gap-4 mb-6 flex-wrap">
+            <div class="flex gap-3 flex-wrap">
                 <button onclick="toggleBulkMode()" id="bulkModeToggle"
-                        class="bg-white border px-6 py-3 rounded-xl font-bold hover:bg-slate-50 transition">
+                        class="btn-secondary px-5 py-3 rounded-xl font-medium text-sm text-gray-300 hover:text-white transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
                     一括操作
                 </button>
-                <button onclick="exportCSV()" class="bg-green-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-green-700 transition">
+                <button onclick="exportCSV()" class="px-5 py-3 rounded-xl font-medium text-sm bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors flex items-center gap-2">
                     📊 CSV
                 </button>
-                <button onclick="exportExcel()" class="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-700 transition">
+                <button onclick="exportExcel()" class="px-5 py-3 rounded-xl font-medium text-sm bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30 transition-colors flex items-center gap-2">
                     📗 Excel
                 </button>
-                <button onclick="exportPDF()" class="bg-red-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-red-700 transition">
+                <button onclick="exportPDF()" class="px-5 py-3 rounded-xl font-medium text-sm bg-orange-500/20 text-orange-400 border border-orange-500/30 hover:bg-orange-500/30 transition-colors flex items-center gap-2">
                     📕 PDF
                 </button>
             </div>
 
             <!-- 一括操作パネル -->
-            <div id="bulkActions" class="hidden mb-6 p-4 bg-slate-100 rounded-xl">
-                <div class="flex justify-between items-center mb-4">
-                    <p class="font-bold text-slate-700"><span id="selectedCount">0</span>件選択中</p>
-                    <div class="flex gap-2">
-                        <button onclick="selectAll()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 transition">
+            <div id="bulkActions" class="hidden glass p-4 rounded-xl animate-slide-up">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+                    <p class="font-medium text-gray-300">
+                        <span id="selectedCount" class="text-cyan-400 font-bold">0</span>件選択中
+                    </p>
+                    <div class="flex gap-2 flex-wrap">
+                        <button onclick="selectAll()" class="btn-gradient px-4 py-2 rounded-lg text-sm font-medium">
                             全て選択
                         </button>
-                        <button onclick="deselectAll()" class="bg-slate-400 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-500 transition">
+                        <button onclick="deselectAll()" class="btn-secondary px-4 py-2 rounded-lg text-sm font-medium text-gray-400">
                             選択解除
                         </button>
-                        <button onclick="toggleBulkMode()" class="bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-slate-300 transition">
+                        <button onclick="toggleBulkMode()" class="btn-secondary px-4 py-2 rounded-lg text-sm font-medium text-gray-400">
                             終了
                         </button>
                     </div>
                 </div>
                 <div class="flex gap-3 flex-wrap">
-                    <button onclick="openBulkEditModal()" class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition flex items-center gap-2">
+                    <button onclick="openBulkEditModal()" class="px-5 py-3 rounded-xl font-medium text-sm bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/30 transition-colors flex items-center gap-2">
                         ✏️ 一括編集
                     </button>
-                    <button onclick="bulkDelete()" class="bg-red-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-red-700 transition flex items-center gap-2">
+                    <button onclick="bulkDelete()" class="px-5 py-3 rounded-xl font-medium text-sm bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors flex items-center gap-2">
                         🗑️ 一括削除
                     </button>
-                    <button onclick="exportSelectedCSV()" class="bg-green-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-green-700 transition flex items-center gap-2">
-                        📊 選択分をCSV
+                    <button onclick="exportSelectedCSV()" class="px-5 py-3 rounded-xl font-medium text-sm bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors flex items-center gap-2">
+                        📊 選択分CSV
                     </button>
-                    <button onclick="exportSelectedExcel()" class="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-emerald-700 transition flex items-center gap-2">
-                        📗 選択分をExcel
+                    <button onclick="exportSelectedExcel()" class="px-5 py-3 rounded-xl font-medium text-sm bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30 transition-colors flex items-center gap-2">
+                        📗 選択分Excel
                     </button>
-                    <button onclick="exportSelectedPDF()" class="bg-orange-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-orange-700 transition flex items-center gap-2">
-                        📕 選択分をPDF
+                    <button onclick="exportSelectedPDF()" class="px-5 py-3 rounded-xl font-medium text-sm bg-orange-500/20 text-orange-400 border border-orange-500/30 hover:bg-orange-500/30 transition-colors flex items-center gap-2">
+                        📕 選択分PDF
                     </button>
                 </div>
             </div>
 
             <!-- レコード一覧 -->
-            <div id="recordsList" class="space-y-4">
+            <div id="recordsList" class="space-y-3">
                 <!-- JavaScriptで動的に生成 -->
             </div>
         </div>
 
         <!-- 管理者タブ -->
         <div id="adminTab" class="hidden">
-            <div class="bg-white p-6 rounded-2xl shadow-sm mb-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold">ユーザー管理</h2>
-                    <button onclick="showCreateUserModal()" 
-                            class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition">
-                        + 新規ユーザー追加
+            <div class="glass p-6 rounded-2xl">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-violet-500/20 flex items-center justify-center">
+                            <span class="text-xl">👥</span>
+                        </div>
+                        <h2 class="font-display text-xl font-semibold">ユーザー管理</h2>
+                    </div>
+                    <button onclick="showCreateUserModal()"
+                            class="btn-gradient px-6 py-3 rounded-xl font-semibold text-sm flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                        新規ユーザー追加
                     </button>
                 </div>
-                
-                <div id="usersList" class="space-y-4">
+
+                <div id="usersList" class="space-y-3">
                     <!-- JavaScriptで動的に生成 -->
                 </div>
             </div>
@@ -294,28 +556,28 @@
     </div>
 
     <!-- 編集モーダル -->
-    <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-[2rem] shadow-2xl max-w-2xl w-full p-8" onclick="event.stopPropagation()">
-            <h2 class="text-2xl font-bold mb-6">レコード編集</h2>
+    <div id="editModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="glass-light rounded-3xl shadow-2xl max-w-2xl w-full p-8 animate-slide-up" onclick="event.stopPropagation()">
+            <h2 class="font-display text-2xl font-bold text-gray-900 mb-6">レコード編集</h2>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <!-- 左側：フォーム -->
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2">日付 <span class="text-red-500">*</span></label>
-                        <input type="date" id="editDate" class="w-full p-3 bg-slate-50 border rounded-xl">
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">日付 <span class="text-red-500">*</span></label>
+                        <input type="date" id="editDate" class="w-full p-3 rounded-xl input-light text-gray-900">
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2">店舗名 <span class="text-red-500">*</span></label>
-                        <input type="text" id="editVendor" class="w-full p-3 bg-slate-50 border rounded-xl" placeholder="店舗名を入力">
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">店舗名 <span class="text-red-500">*</span></label>
+                        <input type="text" id="editVendor" class="w-full p-3 rounded-xl input-light text-gray-900" placeholder="店舗名を入力">
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2">金額（円） <span class="text-red-500">*</span></label>
-                        <input type="number" id="editAmount" class="w-full p-3 bg-slate-50 border rounded-xl" placeholder="金額を入力" min="0">
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">金額（円） <span class="text-red-500">*</span></label>
+                        <input type="number" id="editAmount" class="w-full p-3 rounded-xl input-light text-gray-900" placeholder="金額を入力" min="0">
                     </div>
                     <div>
-                        <label class="block text-sm font-bold text-slate-700 mb-2">カテゴリ</label>
-                        <select id="editCategory" class="w-full p-3 bg-slate-50 border rounded-xl">
+                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">カテゴリ</label>
+                        <select id="editCategory" class="w-full p-3 rounded-xl input-light text-gray-900">
                             <option value="食費">🍽️ 食費</option>
                             <option value="交通費">🚃 交通費</option>
                             <option value="事務用品">🏢 事務用品</option>
@@ -330,19 +592,19 @@
 
                 <!-- 右側：画像プレビュー -->
                 <div class="flex flex-col">
-                    <label class="block text-sm font-bold text-slate-700 mb-2">レシート画像</label>
-                    <div id="editImagePreview" class="flex-1 bg-slate-100 rounded-xl overflow-hidden flex items-center justify-center min-h-[300px]">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">レシート画像</label>
+                    <div id="editImagePreview" class="flex-1 bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center min-h-[300px]">
                         <img id="editPreviewImg" src="" alt="レシート画像" class="max-w-full max-h-full object-contain cursor-pointer" onclick="viewEditImage()">
-                        <p id="editNoImage" class="text-slate-400 hidden">画像なし</p>
+                        <p id="editNoImage" class="text-gray-400 hidden">画像なし</p>
                     </div>
                 </div>
             </div>
 
             <div class="flex gap-3 mt-8">
-                <button onclick="saveEdit()" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition">
+                <button onclick="saveEdit()" class="flex-1 btn-gradient font-bold py-3 rounded-xl">
                     保存
                 </button>
-                <button onclick="closeEditModal()" class="flex-1 bg-slate-200 text-slate-700 font-bold py-3 rounded-xl hover:bg-slate-300 transition">
+                <button onclick="closeEditModal()" class="flex-1 bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">
                     キャンセル
                 </button>
             </div>
@@ -350,22 +612,22 @@
     </div>
 
     <!-- 画像モーダル -->
-    <div id="imageModal" class="hidden fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col">
-        <!-- ヘッダー（固定） -->
-        <div class="flex justify-between items-center p-4 bg-black bg-opacity-50">
-            <div id="pageInfo" class="text-white text-lg font-bold px-4 py-2 rounded-xl">
+    <div id="imageModal" class="hidden fixed inset-0 bg-black/95 z-50 flex flex-col">
+        <!-- ヘッダー -->
+        <div class="flex justify-between items-center p-4 glass">
+            <div id="pageInfo" class="text-white text-sm font-medium px-4 py-2 rounded-xl bg-white/10">
                 1 / 1
             </div>
             <button id="closeModalBtn" onclick="closeImageModal()"
-                    class="text-white text-4xl font-bold hover:text-gray-300 px-4">
-                ×
+                    class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
             </button>
         </div>
-        <!-- 画像コンテナ（スクロール可能） -->
+        <!-- 画像コンテナ -->
         <div id="imageContainer" class="flex-1 overflow-y-auto flex flex-col items-center p-4 gap-4">
-            <!-- 単一画像表示用 -->
             <img id="modalImage" src="" class="max-w-full object-contain hidden">
-            <!-- 複数画像（PDF）表示用 -->
             <div id="multiImageContainer" class="hidden w-full max-w-4xl space-y-4">
                 <!-- JavaScriptで動的に生成 -->
             </div>
@@ -373,21 +635,21 @@
     </div>
 
     <!-- ユーザー作成モーダル -->
-    <div id="createUserModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-[2rem] shadow-2xl max-w-md w-full p-8">
-            <h2 class="text-2xl font-bold mb-6">新規ユーザー作成</h2>
+    <div id="createUserModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="glass-light rounded-3xl shadow-2xl max-w-md w-full p-8 animate-slide-up">
+            <h2 class="font-display text-2xl font-bold text-gray-900 mb-6">新規ユーザー作成</h2>
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">メールアドレス</label>
-                    <input type="email" id="newUserEmail" class="w-full p-3 bg-slate-50 border rounded-xl">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">メールアドレス</label>
+                    <input type="email" id="newUserEmail" class="w-full p-3 rounded-xl input-light text-gray-900">
                 </div>
                 <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">パスワード</label>
-                    <input type="password" id="newUserPassword" class="w-full p-3 bg-slate-50 border rounded-xl">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">パスワード</label>
+                    <input type="password" id="newUserPassword" class="w-full p-3 rounded-xl input-light text-gray-900">
                 </div>
                 <div>
-                    <label class="block text-sm font-bold text-slate-700 mb-2">プラン</label>
-                    <select id="newUserPlan" class="w-full p-3 bg-slate-50 border rounded-xl">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">プラン</label>
+                    <select id="newUserPlan" class="w-full p-3 rounded-xl input-light text-gray-900">
                         <option value="free">Free (10件/月)</option>
                         <option value="premium">Premium (100件/月)</option>
                         <option value="enterprise">Enterprise (1000件/月)</option>
@@ -395,10 +657,10 @@
                 </div>
             </div>
             <div class="flex gap-3 mt-8">
-                <button onclick="createUser()" class="flex-1 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition">
+                <button onclick="createUser()" class="flex-1 btn-gradient font-bold py-3 rounded-xl">
                     作成
                 </button>
-                <button onclick="closeCreateUserModal()" class="flex-1 bg-slate-200 text-slate-700 font-bold py-3 rounded-xl hover:bg-slate-300 transition">
+                <button onclick="closeCreateUserModal()" class="flex-1 bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">
                     キャンセル
                 </button>
             </div>
@@ -406,18 +668,18 @@
     </div>
 
     <!-- プラン変更モーダル -->
-    <div id="changePlanModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-[2rem] shadow-2xl max-w-md w-full p-8">
-            <h2 class="text-2xl font-bold mb-6">プラン変更</h2>
+    <div id="changePlanModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="glass-light rounded-3xl shadow-2xl max-w-md w-full p-8 animate-slide-up">
+            <h2 class="font-display text-2xl font-bold text-gray-900 mb-6">プラン変更</h2>
 
-            <div class="mb-6">
-                <p class="text-sm text-slate-600 mb-2">ユーザー</p>
-                <p class="font-bold text-lg" id="changePlanEmail"></p>
+            <div class="mb-6 p-4 bg-gray-100 rounded-xl">
+                <p class="text-xs text-gray-500 mb-1">ユーザー</p>
+                <p class="font-bold text-gray-900" id="changePlanEmail"></p>
             </div>
 
             <div class="mb-6">
-                <label class="block text-sm font-bold text-slate-700 mb-2">新しいプラン</label>
-                <select id="newPlanSelect" class="w-full p-3 bg-slate-50 border rounded-xl">
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">新しいプラン</label>
+                <select id="newPlanSelect" class="w-full p-3 rounded-xl input-light text-gray-900">
                     <option value="free">無料プラン (10件/月)</option>
                     <option value="premium">プレミアムプラン (100件/月)</option>
                     <option value="enterprise">エンタープライズプラン (1,000件/月)</option>
@@ -427,11 +689,11 @@
 
             <div class="flex gap-3">
                 <button onclick="closeChangePlanModal()"
-                        class="flex-1 bg-slate-100 text-slate-700 px-6 py-3 rounded-xl font-bold hover:bg-slate-200 transition">
+                        class="flex-1 bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">
                     キャンセル
                 </button>
                 <button onclick="confirmChangePlan()"
-                        class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition">
+                        class="flex-1 btn-gradient font-bold py-3 rounded-xl">
                     変更する
                 </button>
             </div>
@@ -439,21 +701,21 @@
     </div>
 
     <!-- 一括編集モーダル -->
-    <div id="bulkEditModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-[2rem] shadow-2xl max-w-md w-full p-8">
-            <h2 class="text-2xl font-bold mb-6">一括編集</h2>
+    <div id="bulkEditModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="glass-light rounded-3xl shadow-2xl max-w-md w-full p-8 animate-slide-up">
+            <h2 class="font-display text-2xl font-bold text-gray-900 mb-6">一括編集</h2>
 
-            <div class="mb-4 p-4 bg-blue-50 rounded-xl">
-                <p class="text-blue-700 font-bold"><span id="bulkEditCount">0</span>件のレコードを編集</p>
+            <div class="mb-4 p-4 bg-cyan-50 rounded-xl border border-cyan-200">
+                <p class="text-cyan-700 font-semibold"><span id="bulkEditCount">0</span>件のレコードを編集</p>
             </div>
 
             <div class="space-y-4">
                 <div>
-                    <label class="flex items-center gap-2 mb-2">
-                        <input type="checkbox" id="bulkEditCategoryCheck" onchange="toggleBulkEditField('category')" class="w-4 h-4">
-                        <span class="text-sm font-bold text-slate-700">カテゴリを変更</span>
+                    <label class="flex items-center gap-2 mb-2 cursor-pointer">
+                        <input type="checkbox" id="bulkEditCategoryCheck" onchange="toggleBulkEditField('category')" class="w-4 h-4 rounded text-cyan-500">
+                        <span class="text-sm font-semibold text-gray-700">カテゴリを変更</span>
                     </label>
-                    <select id="bulkEditCategory" disabled class="w-full p-3 bg-slate-100 border rounded-xl">
+                    <select id="bulkEditCategory" disabled class="w-full p-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-900">
                         <option value="">選択してください</option>
                         <option value="食費">🍽️ 食費</option>
                         <option value="交通費">🚃 交通費</option>
@@ -467,21 +729,21 @@
                 </div>
 
                 <div>
-                    <label class="flex items-center gap-2 mb-2">
-                        <input type="checkbox" id="bulkEditDateCheck" onchange="toggleBulkEditField('date')" class="w-4 h-4">
-                        <span class="text-sm font-bold text-slate-700">日付を変更</span>
+                    <label class="flex items-center gap-2 mb-2 cursor-pointer">
+                        <input type="checkbox" id="bulkEditDateCheck" onchange="toggleBulkEditField('date')" class="w-4 h-4 rounded text-cyan-500">
+                        <span class="text-sm font-semibold text-gray-700">日付を変更</span>
                     </label>
-                    <input type="date" id="bulkEditDate" disabled class="w-full p-3 bg-slate-100 border rounded-xl">
+                    <input type="date" id="bulkEditDate" disabled class="w-full p-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-900">
                 </div>
             </div>
 
             <div class="flex gap-3 mt-8">
                 <button onclick="closeBulkEditModal()"
-                        class="flex-1 bg-slate-100 text-slate-700 px-6 py-3 rounded-xl font-bold hover:bg-slate-200 transition">
+                        class="flex-1 bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">
                     キャンセル
                 </button>
                 <button onclick="confirmBulkEdit()"
-                        class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition">
+                        class="flex-1 btn-gradient font-bold py-3 rounded-xl">
                     一括更新
                 </button>
             </div>
@@ -529,17 +791,17 @@
             const registerForm = document.getElementById('registerForm');
 
             if (tab === 'login') {
-                loginTab.classList.add('tab-active', 'bg-white');
-                loginTab.classList.remove('bg-slate-100');
-                registerTab.classList.remove('tab-active', 'bg-white');
-                registerTab.classList.add('bg-slate-100');
+                loginTab.classList.add('bg-white', 'text-gray-900', 'shadow-sm');
+                loginTab.classList.remove('text-gray-500');
+                registerTab.classList.remove('bg-white', 'text-gray-900', 'shadow-sm');
+                registerTab.classList.add('text-gray-500');
                 loginForm.classList.remove('hidden');
                 registerForm.classList.add('hidden');
             } else {
-                registerTab.classList.add('tab-active', 'bg-white');
-                registerTab.classList.remove('bg-slate-100');
-                loginTab.classList.remove('tab-active', 'bg-white');
-                loginTab.classList.add('bg-slate-100');
+                registerTab.classList.add('bg-white', 'text-gray-900', 'shadow-sm');
+                registerTab.classList.remove('text-gray-500');
+                loginTab.classList.remove('bg-white', 'text-gray-900', 'shadow-sm');
+                loginTab.classList.add('text-gray-500');
                 registerForm.classList.remove('hidden');
                 loginForm.classList.add('hidden');
             }
@@ -581,7 +843,6 @@
                     document.getElementById('authOverlay').classList.add('hidden');
                     document.getElementById('mainContent').classList.remove('hidden');
 
-                    // 管理者の場合、管理者タブを表示
                     if (USER_ROLE === 'admin') {
                         document.getElementById('adminTabs').classList.remove('hidden');
                     }
@@ -635,12 +896,12 @@
                     USER_ROLE = 'user';
                     localStorage.setItem('token', TOKEN);
                     localStorage.setItem('role', USER_ROLE);
-                    
+
                     alert('登録が完了しました！');
-                    
+
                     document.getElementById('authOverlay').classList.add('hidden');
                     document.getElementById('mainContent').classList.remove('hidden');
-                    
+
                     await loadStatus();
                 } else {
                     const error = await res.json();
@@ -672,17 +933,17 @@
             if (tab === 'dashboard') {
                 dashboardTab.classList.remove('hidden');
                 adminTab.classList.add('hidden');
-                dashboardBtn.classList.add('bg-white');
-                dashboardBtn.classList.remove('bg-slate-100');
-                adminBtn.classList.remove('bg-white');
-                adminBtn.classList.add('bg-slate-100');
+                dashboardBtn.classList.add('tab-active');
+                dashboardBtn.classList.remove('btn-secondary', 'text-gray-300');
+                adminBtn.classList.remove('tab-active');
+                adminBtn.classList.add('btn-secondary', 'text-gray-300');
             } else {
                 dashboardTab.classList.add('hidden');
                 adminTab.classList.remove('hidden');
-                dashboardBtn.classList.remove('bg-white');
-                dashboardBtn.classList.add('bg-slate-100');
-                adminBtn.classList.add('bg-white');
-                adminBtn.classList.remove('bg-slate-100');
+                dashboardBtn.classList.remove('tab-active');
+                dashboardBtn.classList.add('btn-secondary', 'text-gray-300');
+                adminBtn.classList.add('tab-active');
+                adminBtn.classList.remove('btn-secondary', 'text-gray-300');
                 loadUsers();
             }
         }
@@ -693,14 +954,9 @@
                 const res = await authFetch('/api/status');
                 const data = await res.json();
                 allRecords = data.records.reverse();
-                
-                // サブスク情報を表示
+
                 displaySubscriptionInfo(data.subscription);
-                
-                // LINE連携ステータスを確認
                 checkLineStatus();
-                
-                // レコードを表示
                 applyFilters();
             } catch (e) {
                 console.error(e);
@@ -716,8 +972,16 @@
                 'unlimited': '無制限プラン'
             };
 
+            const planColors = {
+                'free': 'from-gray-400 to-gray-500',
+                'premium': 'from-cyan-400 to-emerald-400',
+                'enterprise': 'from-violet-400 to-purple-500',
+                'unlimited': 'from-amber-400 to-orange-500'
+            };
+
             const plan = subscription.plan || 'free';
             const planName = planNames[plan] || plan;
+            const planColor = planColors[plan] || planColors['free'];
             const used = subscription.used || 0;
             const limit = subscription.limit || 10;
             const percentage = Math.min((used / limit) * 100, 100);
@@ -725,21 +989,33 @@
             let upgradeButton = '';
             if (plan === 'free') {
                 upgradeButton = `
-                    <button onclick="alert('プランのアップグレードをご希望の場合は、管理者にお問い合わせください。')" 
-                            class="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition">
+                    <button onclick="alert('プランのアップグレードをご希望の場合は、管理者にお問い合わせください。')"
+                            class="btn-gradient px-6 py-3 rounded-xl font-semibold text-sm">
                         プランをアップグレード
                     </button>
                 `;
             }
 
             document.getElementById('subscriptionInfo').innerHTML = `
-                <div class="flex justify-between items-center">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                     <div class="flex-1">
-                        <p class="text-sm text-slate-500">現在のプラン</p>
-                        <p class="text-2xl font-bold mb-2">${planName}</p>
-                        <p class="text-sm text-slate-600 mb-2">使用状況: ${used} / ${limit}件</p>
-                        <div class="w-full bg-slate-200 rounded-full h-3">
-                            <div class="bg-blue-600 h-3 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br ${planColor} flex items-center justify-center">
+                                <span class="text-xl">✨</span>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-400 uppercase tracking-wider">現在のプラン</p>
+                                <p class="font-display text-xl font-bold text-gradient">${planName}</p>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div class="flex justify-between text-sm mb-2">
+                                <span class="text-gray-400">使用状況</span>
+                                <span class="font-semibold">${used} / ${limit}件</span>
+                            </div>
+                            <div class="w-full bg-white/5 rounded-full h-2 overflow-hidden">
+                                <div class="progress-gradient h-2 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
+                            </div>
                         </div>
                     </div>
                     <div>
@@ -842,47 +1118,62 @@
         // レコード表示
         function renderRecords(records) {
             const list = document.getElementById('recordsList');
-            list.innerHTML = records.map(r => {
+
+            if (records.length === 0) {
+                list.innerHTML = `
+                    <div class="glass p-12 rounded-2xl text-center">
+                        <div class="w-16 h-16 rounded-2xl bg-gray-500/20 flex items-center justify-center mx-auto mb-4">
+                            <span class="text-3xl">📭</span>
+                        </div>
+                        <p class="text-gray-400">レコードがありません</p>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = records.map((r, index) => {
                 const displayUrl = (r.pdf_images && r.pdf_images.length > 0) ? r.pdf_images[0] : r.image_url;
                 const allImages = (r.pdf_images && r.pdf_images.length > 0) ? r.pdf_images : [r.image_url];
                 const categoryIcon = categoryIcons[r.category] || '📦';
 
                 return `
-                <div class="bg-white p-6 rounded-2xl shadow-sm flex justify-between items-center">
-                    <div class="flex gap-4 items-center">
+                <div class="record-card p-4 md:p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 animate-fade-in" style="animation-delay: ${index * 0.05}s">
+                    <div class="flex gap-4 items-center flex-1">
                         ${isBulkMode ? `
                             <input type="checkbox"
                                    id="check-${r.id}"
                                    ${selectedRecords.has(r.id) ? 'checked' : ''}
                                    onchange="toggleRecordSelection('${r.id}')"
-                                   class="w-5 h-5 cursor-pointer">
+                                   class="w-5 h-5 cursor-pointer rounded text-cyan-500">
                         ` : ''}
-                        <div class="relative">
+                        <div class="relative group">
                             <img src="${displayUrl}"
-                                 class="w-12 h-12 object-cover rounded-lg cursor-pointer hover:opacity-80 transition"
+                                 class="w-14 h-14 object-cover rounded-xl cursor-pointer group-hover:scale-105 transition-transform ring-2 ring-white/10"
                                  onclick='openImageModal(${JSON.stringify(allImages)})'
                                  title="クリックで拡大表示">
-                            ${r.is_pdf ? '<span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs px-1 rounded">PDF</span>' : ''}
+                            ${r.is_pdf ? '<span class="absolute -top-1 -right-1 bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-md font-medium">PDF</span>' : ''}
                         </div>
-                        <div>
-                            <p class="text-xs text-slate-400">${r.date}</p>
-                            <p class="font-bold">${r.vendor_name}</p>
-                            <p class="text-xs text-slate-500">${categoryIcon} ${r.category || 'その他'}</p>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs text-gray-500 mb-0.5">${r.date}</p>
+                            <p class="font-semibold text-white truncate">${r.vendor_name}</p>
+                            <p class="text-xs text-gray-400 mt-0.5">${categoryIcon} ${r.category || 'その他'}</p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <p class="text-xl font-black text-blue-600">¥${r.total_amount.toLocaleString()}</p>
+                    <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
+                        <p class="font-display text-xl font-bold text-gradient">¥${r.total_amount.toLocaleString()}</p>
                         ${!isBulkMode ? `
-                            <button onclick='openEditModal(${JSON.stringify(r)})'
-                                    class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-100 transition"
-                                    title="編集">
-                                ✏️
-                            </button>
-                            <button onclick="deleteRecord('${r.id}', '${r.vendor_name}')"
-                                    class="bg-red-50 text-red-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-red-100 transition"
-                                    title="削除">
-                                🗑️
-                            </button>
+                            <div class="flex gap-2">
+                                <button onclick='openEditModal(${JSON.stringify(r)})'
+                                        class="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center hover:bg-cyan-500/20 transition-colors"
+                                        title="編集">
+                                    ✏️
+                                </button>
+                                <button onclick="deleteRecord('${r.id}', '${r.vendor_name}')"
+                                        class="w-10 h-10 rounded-xl bg-red-500/10 text-red-400 flex items-center justify-center hover:bg-red-500/20 transition-colors"
+                                        title="削除">
+                                    🗑️
+                                </button>
+                            </div>
                         ` : ''}
                     </div>
                 </div>
@@ -983,7 +1274,6 @@
             document.getElementById('editAmount').value = record.total_amount || '';
             document.getElementById('editCategory').value = record.category || 'その他';
 
-            // 画像プレビューを表示
             const previewImg = document.getElementById('editPreviewImg');
             const noImage = document.getElementById('editNoImage');
 
@@ -1008,8 +1298,9 @@
         function viewEditImage() {
             const previewImg = document.getElementById('editPreviewImg');
             if (previewImg.src && !previewImg.classList.contains('hidden')) {
-                // 画像モーダルを使って大きく表示
                 document.getElementById('modalImage').src = previewImg.src;
+                document.getElementById('modalImage').classList.remove('hidden');
+                document.getElementById('multiImageContainer').classList.add('hidden');
                 document.getElementById('pageInfo').textContent = '1 / 1';
                 document.getElementById('imageModal').classList.remove('hidden');
             }
@@ -1028,7 +1319,6 @@
 
             console.log('Saving edit:', { record_id: editingRecordId, date, vendor, amount, category });
 
-            // バリデーション
             if (!date) {
                 alert('日付を入力してください');
                 document.getElementById('editDate').focus();
@@ -1117,12 +1407,24 @@
             const actions = document.getElementById('bulkActions');
 
             if (isBulkMode) {
-                toggle.classList.add('bg-blue-600', 'text-white');
-                toggle.textContent = '一括操作モード ON';
+                toggle.classList.add('tab-active');
+                toggle.classList.remove('btn-secondary');
+                toggle.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    一括操作モード ON
+                `;
                 actions.classList.remove('hidden');
             } else {
-                toggle.classList.remove('bg-blue-600', 'text-white');
-                toggle.textContent = '一括操作';
+                toggle.classList.remove('tab-active');
+                toggle.classList.add('btn-secondary');
+                toggle.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    一括操作
+                `;
                 actions.classList.add('hidden');
             }
 
@@ -1139,7 +1441,6 @@
             document.getElementById('selectedCount').textContent = selectedRecords.size;
         }
 
-        // 全て選択
         function selectAll() {
             allRecords.forEach(record => {
                 selectedRecords.add(record.id);
@@ -1149,7 +1450,6 @@
             document.getElementById('selectedCount').textContent = selectedRecords.size;
         }
 
-        // 選択解除
         function deselectAll() {
             selectedRecords.clear();
             allRecords.forEach(record => {
@@ -1226,14 +1526,14 @@
                 const select = document.getElementById('bulkEditCategory');
                 select.disabled = !checked;
                 if (!checked) select.value = '';
-                select.classList.toggle('bg-slate-100', !checked);
+                select.classList.toggle('bg-gray-100', !checked);
                 select.classList.toggle('bg-white', checked);
             } else if (field === 'date') {
                 const checked = document.getElementById('bulkEditDateCheck').checked;
                 const input = document.getElementById('bulkEditDate');
                 input.disabled = !checked;
                 if (!checked) input.value = '';
-                input.classList.toggle('bg-slate-100', !checked);
+                input.classList.toggle('bg-gray-100', !checked);
                 input.classList.toggle('bg-white', checked);
             }
         }
@@ -1427,21 +1727,18 @@
             const pageInfo = document.getElementById('pageInfo');
 
             if (images.length === 1) {
-                // 単一画像の場合
                 singleImage.src = images[0];
                 singleImage.classList.remove('hidden');
                 multiContainer.classList.add('hidden');
                 pageInfo.textContent = '1 / 1';
             } else {
-                // 複数画像（PDF）の場合 - すべて縦に並べて表示
                 singleImage.classList.add('hidden');
                 multiContainer.classList.remove('hidden');
-                pageInfo.textContent = `全${images.length}ページ（スクロールで閲覧）`;
+                pageInfo.textContent = `全${images.length}ページ`;
 
-                // 画像を動的に生成
                 multiContainer.innerHTML = images.map((url, idx) => `
-                    <div class="relative bg-white rounded-lg overflow-hidden shadow-lg">
-                        <div class="absolute top-2 left-2 bg-black bg-opacity-70 text-white text-sm px-3 py-1 rounded-full">
+                    <div class="relative glass rounded-xl overflow-hidden">
+                        <div class="absolute top-3 left-3 bg-black/50 backdrop-blur-sm text-white text-sm px-3 py-1 rounded-lg font-medium">
                             ${idx + 1} / ${images.length}
                         </div>
                         <img src="${url}" class="w-full" alt="ページ ${idx + 1}">
@@ -1450,13 +1747,10 @@
             }
 
             modal.classList.remove('hidden');
-
-            // スクロール位置をリセット
             document.getElementById('imageContainer').scrollTop = 0;
         }
 
         function showImageAtIndex(index) {
-            // 単一画像モードの場合のみ使用
             if (currentImages.length === 1) {
                 document.getElementById('modalImage').src = currentImages[index];
                 document.getElementById('pageInfo').textContent = `${index + 1} / ${currentImages.length}`;
@@ -1465,18 +1759,16 @@
 
         function closeImageModal() {
             document.getElementById('imageModal').classList.add('hidden');
-            // コンテナをクリア
             document.getElementById('multiImageContainer').innerHTML = '';
         }
 
-        // 画像モーダルのキーボード操作
+        // キーボード操作
         document.addEventListener('keydown', (e) => {
             const modal = document.getElementById('imageModal');
             if (!modal.classList.contains('hidden')) {
                 if (e.key === 'Escape') {
                     closeImageModal();
                 }
-                // 単一画像の場合のみ左右キーでページ切り替え
                 if (currentImages.length === 1) {
                     if (e.key === 'ArrowLeft' && currentImageIndex > 0) {
                         currentImageIndex--;
@@ -1489,7 +1781,7 @@
             }
         });
 
-        // 画像モーダルの背景クリックで閉じる
+        // 画像モーダル背景クリック
         document.addEventListener('DOMContentLoaded', function() {
             const modal = document.getElementById('imageModal');
             modal.addEventListener('click', function(e) {
@@ -1499,7 +1791,6 @@
                 const isPageInfo = clickedElement.closest('#pageInfo');
                 const isImageContainer = clickedElement.closest('#multiImageContainer');
 
-                // 画像、閉じるボタン、ページ情報、画像コンテナ以外をクリックした場合に閉じる
                 if (!isImage && !isCloseButton && !isPageInfo && !isImageContainer) {
                     closeImageModal();
                 }
@@ -1529,14 +1820,17 @@
 
                 if (!data.users || data.users.length === 0) {
                     usersList.innerHTML = `
-                        <div class="text-center py-8 text-slate-400">
-                            <p>登録されているユーザーはいません</p>
+                        <div class="text-center py-12">
+                            <div class="w-16 h-16 rounded-2xl bg-gray-500/20 flex items-center justify-center mx-auto mb-4">
+                                <span class="text-3xl">👥</span>
+                            </div>
+                            <p class="text-gray-400">登録されているユーザーはいません</p>
                         </div>
                     `;
                     return;
                 }
 
-                usersList.innerHTML = data.users.map(user => {
+                usersList.innerHTML = data.users.map((user, index) => {
                     const sub = user.subscription || {};
                     const planNames = {
                         'free': '無料プラン',
@@ -1550,27 +1844,27 @@
                     const limit = sub.limit || 10;
 
                     return `
-                    <div class="bg-slate-50 p-6 rounded-xl flex justify-between items-center">
+                    <div class="card-dark p-5 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 animate-fade-in" style="animation-delay: ${index * 0.05}s">
                         <div class="flex-1">
-                            <div class="flex items-center gap-3 mb-2">
-                                <p class="font-bold text-lg">${user.email}</p>
-                                <span class="text-xs bg-slate-200 px-3 py-1 rounded-full">${roleLabel}</span>
+                            <div class="flex items-center gap-3 mb-2 flex-wrap">
+                                <p class="font-semibold text-white">${user.email}</p>
+                                <span class="text-xs px-2 py-1 rounded-lg ${user.role === 'admin' ? 'bg-violet-500/20 text-violet-400' : 'bg-gray-500/20 text-gray-400'}">${roleLabel}</span>
                             </div>
-                            <p class="text-sm text-slate-600 mb-1">プラン: ${planName}</p>
-                            <p class="text-sm text-slate-500">使用状況: ${used} / ${limit}件</p>
-                            ${user.line_user_id ? '<p class="text-xs text-green-600 mt-1">✅ LINE連携済み</p>' : ''}
+                            <p class="text-sm text-gray-400 mb-1">プラン: ${planName}</p>
+                            <p class="text-xs text-gray-500">使用状況: ${used} / ${limit}件</p>
+                            ${user.line_user_id ? '<p class="text-xs text-emerald-400 mt-1">✅ LINE連携済み</p>' : ''}
                         </div>
-                        <div class="flex gap-3">
+                        <div class="flex gap-2">
                             ${user.role !== 'admin' ? `
                                 <button onclick="changePlan('${user.id}', '${user.email}', '${sub.plan || 'free'}')"
-                                        class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-100 transition">
+                                        class="px-4 py-2 rounded-xl text-sm font-medium bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition-colors">
                                     プラン変更
                                 </button>
                                 <button onclick="deleteUser('${user.id}', '${user.email}')"
-                                        class="bg-red-50 text-red-600 px-4 py-2 rounded-xl text-sm font-bold hover:bg-red-100 transition">
+                                        class="px-4 py-2 rounded-xl text-sm font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors">
                                     削除
                                 </button>
-                            ` : '<span class="text-slate-400 text-sm px-4 py-2">管理者は削除不可</span>'}
+                            ` : '<span class="text-gray-500 text-sm px-4 py-2">管理者は削除不可</span>'}
                         </div>
                     </div>
                     `;
@@ -1620,11 +1914,10 @@
             }
         }
 
-        // プラン変更用のグローバル変数
+        // プラン変更
         let changingUserId = null;
         let changingUserEmail = null;
 
-        // プラン変更モーダルを表示
         function changePlan(userId, email, currentPlan) {
             changingUserId = userId;
             changingUserEmail = email;
@@ -1633,14 +1926,12 @@
             document.getElementById('changePlanModal').classList.remove('hidden');
         }
 
-        // プラン変更モーダルを閉じる
         function closeChangePlanModal() {
             changingUserId = null;
             changingUserEmail = null;
             document.getElementById('changePlanModal').classList.add('hidden');
         }
 
-        // プラン変更を実行
         async function confirmChangePlan() {
             if (!changingUserId) return;
 
@@ -1700,14 +1991,12 @@
 
             if (TOKEN) {
                 try {
-                    // トークンの有効性を確認
                     const res = await authFetch('/api/status');
 
                     if (res.ok) {
                         const data = await res.json();
                         console.log('Token is valid, user authenticated:', data.email);
 
-                        // ロールを更新（サーバーから取得した最新の情報を使用）
                         USER_ROLE = data.role || 'user';
                         localStorage.setItem('role', USER_ROLE);
 
@@ -1721,18 +2010,15 @@
                         await loadStatus();
                     } else {
                         console.warn('Token validation failed, clearing stored credentials');
-                        // トークンが無効な場合はクリア
                         TOKEN = '';
                         USER_ROLE = 'user';
                         localStorage.removeItem('token');
                         localStorage.removeItem('role');
-                        // ログイン画面を表示
                         document.getElementById('authOverlay').classList.remove('hidden');
                         document.getElementById('mainContent').classList.add('hidden');
                     }
                 } catch (e) {
                     console.error('Error validating token:', e);
-                    // エラーが発生した場合もクリア
                     TOKEN = '';
                     USER_ROLE = 'user';
                     localStorage.removeItem('token');
