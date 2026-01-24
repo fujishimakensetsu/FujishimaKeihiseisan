@@ -863,8 +863,12 @@
                     document.getElementById('authOverlay').classList.add('hidden');
                     document.getElementById('mainContent').classList.remove('hidden');
 
+                    // 管理者タブの表示/非表示を明示的に制御
                     if (USER_ROLE === 'admin') {
                         document.getElementById('adminTabs').classList.remove('hidden');
+                    } else {
+                        document.getElementById('adminTabs').classList.add('hidden');
+                        document.getElementById('adminTab').classList.add('hidden');
                     }
 
                     await loadStatus();
@@ -941,6 +945,8 @@
             localStorage.removeItem('role');
             document.getElementById('authOverlay').classList.remove('hidden');
             document.getElementById('mainContent').classList.add('hidden');
+            document.getElementById('adminTabs').classList.add('hidden');
+            document.getElementById('adminTab').classList.add('hidden');
         }
 
         // メインタブ切り替え
@@ -1897,8 +1903,12 @@
                         document.getElementById('authOverlay').classList.add('hidden');
                         document.getElementById('mainContent').classList.remove('hidden');
 
+                        // 管理者タブの表示/非表示を明示的に制御
                         if (USER_ROLE === 'admin') {
                             document.getElementById('adminTabs').classList.remove('hidden');
+                        } else {
+                            document.getElementById('adminTabs').classList.add('hidden');
+                            document.getElementById('adminTab').classList.add('hidden');
                         }
 
                         await loadStatus();
@@ -1908,6 +1918,8 @@
                         USER_ROLE = 'user';
                         localStorage.removeItem('token');
                         localStorage.removeItem('role');
+                        document.getElementById('adminTabs').classList.add('hidden');
+                        document.getElementById('adminTab').classList.add('hidden');
                         document.getElementById('authOverlay').classList.remove('hidden');
                         document.getElementById('mainContent').classList.add('hidden');
                     }
