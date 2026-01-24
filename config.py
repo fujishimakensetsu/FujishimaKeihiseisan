@@ -31,7 +31,12 @@ FONT_DIR = "fonts"
 
 # === Gemini AI プロンプト ===
 GEMINI_PROMPT = """領収書を解析し、以下のJSON形式で返してください:
-[ { "date": "YYYY-MM-DD", "vendor_name": "店舗名", "total_amount": 数値 } ]
+[ { "date": "YYYY-MM-DD", "vendor_name": "店舗名", "total_amount": 数値, "is_ic_transport": true/false } ]
+
+【重要：is_ic_transportフラグ】
+- 書類に「ICカード交通費」「IC交通費」「ICカード利用明細」などの表記がある場合は true
+- 交通系ICカード（Suica、PASMO、ICOCA等）の利用明細の場合は true
+- それ以外の一般的な領収書の場合は false
 
 【重要：日付の変換ルール】
 1. 和暦が記載されている場合は必ず西暦に変換してください

@@ -101,8 +101,6 @@ async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depend
 
     # 駐車場キーワード
     parking_keywords = ["駐車", "パーキング", "コインパ", "parking", "P代", "駐輪"]
-    # 公共交通機関キーワード
-    transport_keywords = ["鉄道", "電車", "JR", "バス", "地下鉄", "メトロ", "モノレール", "交通", "IC", "Suica", "PASMO", "ICOCA"]
 
     def is_parking(record):
         vendor = record.get("vendor_name", "").lower()
@@ -112,13 +110,9 @@ async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depend
                 return True
         return False
 
-    def is_transport(record):
-        vendor = record.get("vendor_name", "").lower()
-        category = record.get("category", "").lower()
-        for kw in transport_keywords:
-            if kw.lower() in vendor or kw.lower() in category:
-                return True
-        return False
+    def is_ic_transport(record):
+        """ICカード交通費かどうかを判定（Gemini解析結果のフラグを使用）"""
+        return record.get("is_ic_transport") == True
 
     # レコードを分類
     parking_records = []
@@ -128,7 +122,7 @@ async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depend
     for record in records:
         if is_parking(record):
             parking_records.append(record)
-        elif is_transport(record):
+        elif is_ic_transport(record):
             transport_records.append(record)
         else:
             other_records.append(record)
@@ -352,8 +346,6 @@ async def export_selected_excel(data: dict, u_id: str = Depends(get_current_user
 
     # 駐車場キーワード
     parking_keywords = ["駐車", "パーキング", "コインパ", "parking", "P代", "駐輪"]
-    # 公共交通機関キーワード
-    transport_keywords = ["鉄道", "電車", "JR", "バス", "地下鉄", "メトロ", "モノレール", "交通", "IC", "Suica", "PASMO", "ICOCA"]
 
     def is_parking(record):
         vendor = record.get("vendor_name", "").lower()
@@ -363,13 +355,9 @@ async def export_selected_excel(data: dict, u_id: str = Depends(get_current_user
                 return True
         return False
 
-    def is_transport(record):
-        vendor = record.get("vendor_name", "").lower()
-        category = record.get("category", "").lower()
-        for kw in transport_keywords:
-            if kw.lower() in vendor or kw.lower() in category:
-                return True
-        return False
+    def is_ic_transport(record):
+        """ICカード交通費かどうかを判定（Gemini解析結果のフラグを使用）"""
+        return record.get("is_ic_transport") == True
 
     # レコードを分類
     parking_records = []
@@ -379,7 +367,7 @@ async def export_selected_excel(data: dict, u_id: str = Depends(get_current_user
     for record in records:
         if is_parking(record):
             parking_records.append(record)
-        elif is_transport(record):
+        elif is_ic_transport(record):
             transport_records.append(record)
         else:
             other_records.append(record)
