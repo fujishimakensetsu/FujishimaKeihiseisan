@@ -358,50 +358,71 @@
             </div>
 
             <!-- ログインフォーム -->
-            <form id="loginForm" class="space-y-4" autocomplete="off" onsubmit="event.preventDefault(); login();">
+            <div id="loginForm" class="space-y-4">
+                <!-- ダミーフィールド（パスワードマネージャー対策） -->
+                <input type="text" style="display:none" aria-hidden="true">
+                <input type="password" style="display:none" aria-hidden="true">
                 <div>
                     <label class="block text-xs font-semibold text-adaptive-secondary uppercase tracking-wider mb-2">メールアドレス</label>
                     <input type="email" id="loginEmail" placeholder="your@email.com"
-                           autocomplete="username"
+                           name="login_email_field"
+                           autocomplete="off"
+                           data-lpignore="true"
+                           data-form-type="other"
                            class="w-full p-4 rounded-xl input-light">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-adaptive-secondary uppercase tracking-wider mb-2">パスワード</label>
                     <input type="password" id="loginPassword" placeholder="••••••••"
-                           autocomplete="current-password"
+                           name="login_pass_field"
+                           autocomplete="off"
+                           data-lpignore="true"
+                           data-form-type="other"
                            class="w-full p-4 rounded-xl input-light">
                 </div>
-                <button type="submit"
+                <button type="button" onclick="login()"
                         class="w-full btn-gradient text-white font-bold py-4 rounded-xl mt-6">
                     ログイン
                 </button>
-            </form>
+            </div>
 
             <!-- 登録フォーム -->
-            <form id="registerForm" class="hidden space-y-4" autocomplete="off" onsubmit="event.preventDefault(); register();">
+            <div id="registerForm" class="hidden space-y-4">
+                <!-- ダミーフィールド（パスワードマネージャー対策） -->
+                <input type="text" style="display:none" aria-hidden="true">
+                <input type="password" style="display:none" aria-hidden="true">
                 <div>
                     <label class="block text-xs font-semibold text-adaptive-secondary uppercase tracking-wider mb-2">メールアドレス</label>
                     <input type="email" id="registerEmail" placeholder="your@email.com"
-                           autocomplete="username"
+                           name="reg_email_field"
+                           autocomplete="off"
+                           data-lpignore="true"
+                           data-form-type="other"
                            class="w-full p-4 rounded-xl input-light">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-adaptive-secondary uppercase tracking-wider mb-2">パスワード（8文字以上）</label>
                     <input type="password" id="registerPassword" placeholder="••••••••"
-                           autocomplete="new-password"
+                           name="reg_pass_field"
+                           autocomplete="off"
+                           data-lpignore="true"
+                           data-form-type="other"
                            class="w-full p-4 rounded-xl input-light">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-adaptive-secondary uppercase tracking-wider mb-2">パスワード（確認）</label>
                     <input type="password" id="registerPasswordConfirm" placeholder="••••••••"
-                           autocomplete="new-password"
+                           name="reg_pass_confirm_field"
+                           autocomplete="off"
+                           data-lpignore="true"
+                           data-form-type="other"
                            class="w-full p-4 rounded-xl input-light">
                 </div>
-                <button type="submit"
+                <button type="button" onclick="register()"
                         class="w-full btn-gradient text-white font-bold py-4 rounded-xl mt-6">
                     アカウント作成
                 </button>
-            </form>
+            </div>
         </div>
     </div>
 
