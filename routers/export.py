@@ -99,14 +99,31 @@ async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depend
     if not records:
         raise HTTPException(status_code=404, detail="データがありません")
 
-    # 駐車場キーワード
-    parking_keywords = ["駐車", "パーキング", "コインパ", "parking", "P代", "駐輪"]
+    # 駐輪場キーワード（駐車場から除外）
+    bicycle_keywords = ["駐輪", "自転車", "サイクル", "bicycle", "cycle"]
+    # 駐車場キーワード（フォールバック用）
+    parking_keywords = ["駐車", "パーキング", "コインパ", "parking", "P代"]
+
+    def is_bicycle_parking(record):
+        """駐輪場かどうかを判定"""
+        vendor = record.get("vendor_name", "").lower()
+        for kw in bicycle_keywords:
+            if kw.lower() in vendor:
+                return True
+        return False
 
     def is_parking(record):
+        """駐車場かどうかを判定（Gemini解析結果のフラグを優先、駐輪場は除外）"""
+        # 駐輪場は駐車場に含めない
+        if is_bicycle_parking(record):
+            return False
+        # Geminiのis_parkingフラグを優先
+        if record.get("is_parking") == True:
+            return True
+        # フォールバック: キーワードマッチング
         vendor = record.get("vendor_name", "").lower()
-        category = record.get("category", "").lower()
         for kw in parking_keywords:
-            if kw.lower() in vendor or kw.lower() in category:
+            if kw.lower() in vendor:
                 return True
         return False
 
@@ -344,14 +361,31 @@ async def export_selected_excel(data: dict, u_id: str = Depends(get_current_user
     if not records:
         raise HTTPException(status_code=404, detail="データがありません")
 
-    # 駐車場キーワード
-    parking_keywords = ["駐車", "パーキング", "コインパ", "parking", "P代", "駐輪"]
+    # 駐輪場キーワード（駐車場から除外）
+    bicycle_keywords = ["駐輪", "自転車", "サイクル", "bicycle", "cycle"]
+    # 駐車場キーワード（フォールバック用）
+    parking_keywords = ["駐車", "パーキング", "コインパ", "parking", "P代"]
+
+    def is_bicycle_parking(record):
+        """駐輪場かどうかを判定"""
+        vendor = record.get("vendor_name", "").lower()
+        for kw in bicycle_keywords:
+            if kw.lower() in vendor:
+                return True
+        return False
 
     def is_parking(record):
+        """駐車場かどうかを判定（Gemini解析結果のフラグを優先、駐輪場は除外）"""
+        # 駐輪場は駐車場に含めない
+        if is_bicycle_parking(record):
+            return False
+        # Geminiのis_parkingフラグを優先
+        if record.get("is_parking") == True:
+            return True
+        # フォールバック: キーワードマッチング
         vendor = record.get("vendor_name", "").lower()
-        category = record.get("category", "").lower()
         for kw in parking_keywords:
-            if kw.lower() in vendor or kw.lower() in category:
+            if kw.lower() in vendor:
                 return True
         return False
 

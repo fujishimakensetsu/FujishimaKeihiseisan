@@ -31,12 +31,22 @@ FONT_DIR = "fonts"
 
 # === Gemini AI プロンプト ===
 GEMINI_PROMPT = """領収書を解析し、以下のJSON形式で返してください:
-[ { "date": "YYYY-MM-DD", "vendor_name": "店舗名", "total_amount": 数値, "is_ic_transport": true/false } ]
+[ { "date": "YYYY-MM-DD", "vendor_name": "店舗名", "total_amount": 数値, "is_ic_transport": true/false, "is_parking": true/false } ]
 
 【重要：is_ic_transportフラグ】
 - 書類に「ICカード交通費」「IC交通費」「ICカード利用明細」などの表記がある場合は true
 - 交通系ICカード（Suica、PASMO、ICOCA等）の利用明細の場合は true
 - それ以外の一般的な領収書の場合は false
+
+【重要：is_parkingフラグ（駐車場代の判定）】
+以下のいずれかの条件を満たす場合は true:
+- 「発券機」「入庫時刻」「入庫時間」「出庫時刻」「出庫時間」「駐車料金」「駐車時間」「駐車時刻」の表記がある
+- 「駐車場」「パーキング」「コインパーキング」「parking」「P代」の表記がある
+- 駐車場の領収書・精算書と判断できる場合
+
+【重要：駐輪場は駐車場に含めない】
+- 「駐輪場」「駐輪」「自転車」「サイクル」の表記がある場合は、is_parking を false にしてください
+- 駐輪場の料金は駐車場代とは別扱いになります
 
 【重要：日付の変換ルール】
 1. 和暦が記載されている場合は必ず西暦に変換してください
