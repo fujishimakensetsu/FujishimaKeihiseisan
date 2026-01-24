@@ -128,7 +128,12 @@ async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depend
         return False
 
     def is_ic_transport(record):
-        """ICカード交通費かどうかを判定（Gemini解析結果のフラグを使用）"""
+        """ICカード交通費かどうかを判定
+
+        Gemini解析で「ICカード交通費」という文言が書類に明示的に
+        記載されている場合のみtrueとなる。
+        通常のレシートや交通系ICカードの利用履歴はfalse。
+        """
         return record.get("is_ic_transport") == True
 
     # レコードを分類
@@ -192,6 +197,8 @@ async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depend
         row += 1
 
     # === ICカード交通費欄（Z-AE列）にデータを書き込み ===
+    # ※「ICカード交通費」という文言が明示的に記載されたPDFのデータのみ出力
+    # ※通常のレシートや交通系ICカードの利用履歴はここには出力されない
     transport_row = 7  # 7行目から開始
     for record in sorted(transport_records, key=lambda x: x.get("date", ""), reverse=True):
         if transport_row > 24:  # 最大18件（7行目〜24行目）
@@ -203,7 +210,7 @@ async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depend
 
         ws.cell(row=transport_row, column=26, value=date)  # Z列: 利用日
         ws.cell(row=transport_row, column=27, value=vendor)  # AA列: 利用先
-        ws.cell(row=transport_row, column=28, value="")  # AB列: 区間始まり（店舗名から推測できない場合は空）
+        ws.cell(row=transport_row, column=28, value="")  # AB列: 区間始まり
         ws.cell(row=transport_row, column=30, value="")  # AD列: 区間終わり
         ws.cell(row=transport_row, column=31, value=amount)  # AE列: 利用金額
 
@@ -390,7 +397,12 @@ async def export_selected_excel(data: dict, u_id: str = Depends(get_current_user
         return False
 
     def is_ic_transport(record):
-        """ICカード交通費かどうかを判定（Gemini解析結果のフラグを使用）"""
+        """ICカード交通費かどうかを判定
+
+        Gemini解析で「ICカード交通費」という文言が書類に明示的に
+        記載されている場合のみtrueとなる。
+        通常のレシートや交通系ICカードの利用履歴はfalse。
+        """
         return record.get("is_ic_transport") == True
 
     # レコードを分類
