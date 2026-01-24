@@ -199,20 +199,43 @@ async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depend
     # === ICカード交通費欄（Z-AE列）にデータを書き込み ===
     # ※「ICカード交通費」という文言が明示的に記載されたPDFのデータのみ出力
     # ※通常のレシートや交通系ICカードの利用履歴はここには出力されない
+    # ※レコード内にitemsがある場合は、各項目を個別の行として出力する
     transport_row = 7  # 7行目から開始
-    for record in sorted(transport_records, key=lambda x: x.get("date", "")):
+
+    # transport_recordsを展開して、各項目を個別に出力
+    transport_items = []
+    for record in transport_records:
+        items = record.get("items", [])
+        if items and isinstance(items, list):
+            # itemsがある場合は各項目を展開
+            for item in items:
+                transport_items.append({
+                    "date": item.get("date", record.get("date", "")),
+                    "vendor": item.get("vendor_name", item.get("vendor", record.get("vendor_name", ""))),
+                    "amount": item.get("total_amount", item.get("amount", 0)),
+                    "from_station": item.get("from_station", item.get("from", "")),
+                    "to_station": item.get("to_station", item.get("to", ""))
+                })
+        else:
+            # itemsがない場合はレコード自体を1項目として出力
+            transport_items.append({
+                "date": record.get("date", ""),
+                "vendor": record.get("vendor_name", ""),
+                "amount": record.get("total_amount", 0),
+                "from_station": record.get("from_station", ""),
+                "to_station": record.get("to_station", "")
+            })
+
+    # 日付順にソートして出力
+    for item in sorted(transport_items, key=lambda x: x.get("date", "")):
         if transport_row > 24:  # 最大18件（7行目〜24行目）
             break
 
-        date = record.get("date", "")
-        vendor = record.get("vendor_name", "")
-        amount = record.get("total_amount", 0)
-
-        ws.cell(row=transport_row, column=26, value=date)  # Z列: 利用日
-        ws.cell(row=transport_row, column=27, value=vendor)  # AA列: 利用先
-        ws.cell(row=transport_row, column=28, value="")  # AB列: 区間始まり
-        ws.cell(row=transport_row, column=30, value="")  # AD列: 区間終わり
-        ws.cell(row=transport_row, column=31, value=amount)  # AE列: 利用金額
+        ws.cell(row=transport_row, column=26, value=item.get("date", ""))  # Z列: 利用日
+        ws.cell(row=transport_row, column=27, value=item.get("vendor", ""))  # AA列: 利用先
+        ws.cell(row=transport_row, column=28, value=item.get("from_station", ""))  # AB列: 区間始まり
+        ws.cell(row=transport_row, column=30, value=item.get("to_station", ""))  # AD列: 区間終わり
+        ws.cell(row=transport_row, column=31, value=item.get("amount", 0))  # AE列: 利用金額
 
         transport_row += 1
 
@@ -466,20 +489,43 @@ async def export_selected_excel(data: dict, u_id: str = Depends(get_current_user
         row += 1
 
     # === ICカード交通費欄（Z-AE列）にデータを書き込み ===
+    # ※レコード内にitemsがある場合は、各項目を個別の行として出力する
     transport_row = 7  # 7行目から開始
-    for record in sorted(transport_records, key=lambda x: x.get("date", ""), reverse=True):
+
+    # transport_recordsを展開して、各項目を個別に出力
+    transport_items = []
+    for record in transport_records:
+        items = record.get("items", [])
+        if items and isinstance(items, list):
+            # itemsがある場合は各項目を展開
+            for item in items:
+                transport_items.append({
+                    "date": item.get("date", record.get("date", "")),
+                    "vendor": item.get("vendor_name", item.get("vendor", record.get("vendor_name", ""))),
+                    "amount": item.get("total_amount", item.get("amount", 0)),
+                    "from_station": item.get("from_station", item.get("from", "")),
+                    "to_station": item.get("to_station", item.get("to", ""))
+                })
+        else:
+            # itemsがない場合はレコード自体を1項目として出力
+            transport_items.append({
+                "date": record.get("date", ""),
+                "vendor": record.get("vendor_name", ""),
+                "amount": record.get("total_amount", 0),
+                "from_station": record.get("from_station", ""),
+                "to_station": record.get("to_station", "")
+            })
+
+    # 日付順にソートして出力（降順）
+    for item in sorted(transport_items, key=lambda x: x.get("date", ""), reverse=True):
         if transport_row > 24:  # 最大18件（7行目〜24行目）
             break
 
-        date = record.get("date", "")
-        vendor = record.get("vendor_name", "")
-        amount = record.get("total_amount", 0)
-
-        ws.cell(row=transport_row, column=26, value=date)  # Z列: 利用日
-        ws.cell(row=transport_row, column=27, value=vendor)  # AA列: 利用先
-        ws.cell(row=transport_row, column=28, value="")  # AB列: 区間始まり
-        ws.cell(row=transport_row, column=30, value="")  # AD列: 区間終わり
-        ws.cell(row=transport_row, column=31, value=amount)  # AE列: 利用金額
+        ws.cell(row=transport_row, column=26, value=item.get("date", ""))  # Z列: 利用日
+        ws.cell(row=transport_row, column=27, value=item.get("vendor", ""))  # AA列: 利用先
+        ws.cell(row=transport_row, column=28, value=item.get("from_station", ""))  # AB列: 区間始まり
+        ws.cell(row=transport_row, column=30, value=item.get("to_station", ""))  # AD列: 区間終わり
+        ws.cell(row=transport_row, column=31, value=item.get("amount", 0))  # AE列: 利用金額
 
         transport_row += 1
 

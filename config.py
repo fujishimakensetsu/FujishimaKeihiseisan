@@ -47,6 +47,21 @@ GEMINI_PROMPT = """領収書を解析し、以下のJSON形式で返してくだ
 
 ※「ICカード交通費」専用のフォーマット（会社や経費精算システムで出力されるPDF等）のみがtrueの対象です
 
+【重要：ICカード交通費（is_ic_transport: true）の場合の出力形式】
+ICカード交通費と判定された書類に複数の明細行がある場合は、「items」配列を追加して各明細を個別に記録してください:
+{
+  "date": "YYYY-MM-DD",
+  "vendor_name": "ICカード交通費",
+  "total_amount": 合計金額,
+  "is_ic_transport": true,
+  "is_parking": false,
+  "items": [
+    { "date": "YYYY-MM-DD", "vendor": "利用先や路線名", "from_station": "乗車駅", "to_station": "降車駅", "amount": 金額 },
+    ...
+  ]
+}
+※itemsには書類内の各明細行をすべて個別に含めてください。まとめずに1項目ずつ記録します。
+
 【重要：is_parkingフラグ（駐車場代の判定）】
 以下のいずれかの条件を満たす場合は true:
 - 「発券機」「入庫時刻」「入庫時間」「出庫時刻」「出庫時間」「駐車料金」「駐車時間」「駐車時刻」の表記がある
