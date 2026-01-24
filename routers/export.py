@@ -76,8 +76,10 @@ async def export_csv(token: Optional[str] = None, u_id: Optional[str] = Depends(
 
 @router.get("/api/export/excel")
 async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depends(get_current_user_optional)):
-    """Excel出力（サブコレクション対応）"""
-    import pandas as pd
+    """Excel出力（テンプレート使用・店舗名集計）"""
+    import openpyxl
+    from collections import defaultdict
+    from datetime import datetime
 
     # トークンパラメータがある場合はそれを使用
     if token:
@@ -97,25 +99,62 @@ async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depend
     if not records:
         raise HTTPException(status_code=404, detail="データがありません")
 
-    df = pd.DataFrame(records)
+    # 店舗名で集計（同じ店舗名の金額を合算）
+    vendor_totals = defaultdict(lambda: {"amount": 0, "dates": [], "category": ""})
+    for record in records:
+        vendor_name = record.get("vendor_name", "不明")
+        amount = record.get("total_amount", 0)
+        date = record.get("date", "")
+        category = record.get("category", "その他")
 
-    # 列名を日本語に変更
-    column_mapping = {
-        "date": "日付",
-        "vendor_name": "店舗名",
-        "total_amount": "金額",
-        "category": "カテゴリ"
-    }
+        vendor_totals[vendor_name]["amount"] += amount
+        if date and date not in vendor_totals[vendor_name]["dates"]:
+            vendor_totals[vendor_name]["dates"].append(date)
+        if not vendor_totals[vendor_name]["category"]:
+            vendor_totals[vendor_name]["category"] = category
 
-    # 必要な列のみ抽出して並び替え
-    available_cols = [col for col in ["date", "vendor_name", "total_amount", "category"] if col in df.columns]
-    df_export = df[available_cols].copy()
-    df_export.rename(columns=column_mapping, inplace=True)
+    # テンプレートファイルを読み込み
+    template_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "template.xlsx")
+    if not os.path.exists(template_path):
+        raise HTTPException(status_code=500, detail="テンプレートファイルが見つかりません")
 
+    wb = openpyxl.load_workbook(template_path)
+    ws = wb.active
+
+    # データを書き込み（9行目から29行目まで、最大21件）
+    row = 9
+    for vendor_name, data in sorted(vendor_totals.items(), key=lambda x: x[1]["amount"], reverse=True):
+        if row > 29:
+            break
+
+        # 日付（複数ある場合は最新日付を使用）
+        dates = sorted(data["dates"], reverse=True)
+        date_str = dates[0] if dates else ""
+
+        # B列: 支払日（セル結合されているのでB列に書き込み）
+        ws.cell(row=row, column=2, value=date_str)
+
+        # E列: 支払先（店舗名）
+        ws.cell(row=row, column=5, value=vendor_name)
+
+        # H列: 支払事由（カテゴリを使用）
+        ws.cell(row=row, column=8, value=data["category"])
+
+        # S列: 支払額（10%）- 基本的に10%として出力
+        ws.cell(row=row, column=19, value=data["amount"])
+
+        row += 1
+
+    # 提出日を設定（D31）
+    today = datetime.now().strftime("%Y/%m/%d")
+    ws.cell(row=31, column=4, value=today)
+
+    # 出力ファイルを保存
     excel_path = f"{config.UPLOAD_DIR}/export_{u_id}_{int(time.time())}.xlsx"
-    df_export.to_excel(excel_path, index=False, engine='openpyxl')
+    wb.save(excel_path)
+    wb.close()
 
-    return FileResponse(excel_path, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename=f"receipts_{u_id}.xlsx")
+    return FileResponse(excel_path, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename=f"経費精算書_{today.replace('/', '')}.xlsx")
 
 @router.get("/api/export/pdf")
 async def export_pdf(token: Optional[str] = None, u_id: Optional[str] = Depends(get_current_user_optional)):
@@ -234,8 +273,10 @@ async def export_selected_csv(data: dict, u_id: str = Depends(get_current_user))
 
 @router.post("/api/export/selected/excel")
 async def export_selected_excel(data: dict, u_id: str = Depends(get_current_user)):
-    """選択したレコードのみExcel出力"""
-    import pandas as pd
+    """選択したレコードのみExcel出力（テンプレート使用・店舗名集計）"""
+    import openpyxl
+    from collections import defaultdict
+    from datetime import datetime
 
     record_ids = data.get("record_ids", [])
 
@@ -256,24 +297,62 @@ async def export_selected_excel(data: dict, u_id: str = Depends(get_current_user
     if not records:
         raise HTTPException(status_code=404, detail="データがありません")
 
-    df = pd.DataFrame(records)
+    # 店舗名で集計（同じ店舗名の金額を合算）
+    vendor_totals = defaultdict(lambda: {"amount": 0, "dates": [], "category": ""})
+    for record in records:
+        vendor_name = record.get("vendor_name", "不明")
+        amount = record.get("total_amount", 0)
+        date = record.get("date", "")
+        category = record.get("category", "その他")
 
-    # 列名を日本語に変更
-    column_mapping = {
-        "date": "日付",
-        "vendor_name": "店舗名",
-        "total_amount": "金額",
-        "category": "カテゴリ"
-    }
+        vendor_totals[vendor_name]["amount"] += amount
+        if date and date not in vendor_totals[vendor_name]["dates"]:
+            vendor_totals[vendor_name]["dates"].append(date)
+        if not vendor_totals[vendor_name]["category"]:
+            vendor_totals[vendor_name]["category"] = category
 
-    available_cols = [col for col in ["date", "vendor_name", "total_amount", "category"] if col in df.columns]
-    df_export = df[available_cols].copy()
-    df_export.rename(columns=column_mapping, inplace=True)
+    # テンプレートファイルを読み込み
+    template_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "template.xlsx")
+    if not os.path.exists(template_path):
+        raise HTTPException(status_code=500, detail="テンプレートファイルが見つかりません")
 
+    wb = openpyxl.load_workbook(template_path)
+    ws = wb.active
+
+    # データを書き込み（9行目から29行目まで、最大21件）
+    row = 9
+    for vendor_name, data in sorted(vendor_totals.items(), key=lambda x: x[1]["amount"], reverse=True):
+        if row > 29:
+            break
+
+        # 日付（複数ある場合は最新日付を使用）
+        dates = sorted(data["dates"], reverse=True)
+        date_str = dates[0] if dates else ""
+
+        # B列: 支払日
+        ws.cell(row=row, column=2, value=date_str)
+
+        # E列: 支払先（店舗名）
+        ws.cell(row=row, column=5, value=vendor_name)
+
+        # H列: 支払事由（カテゴリを使用）
+        ws.cell(row=row, column=8, value=data["category"])
+
+        # S列: 支払額（10%）
+        ws.cell(row=row, column=19, value=data["amount"])
+
+        row += 1
+
+    # 提出日を設定（D31）
+    today = datetime.now().strftime("%Y/%m/%d")
+    ws.cell(row=31, column=4, value=today)
+
+    # 出力ファイルを保存
     excel_path = f"{config.UPLOAD_DIR}/export_selected_{u_id}_{int(time.time())}.xlsx"
-    df_export.to_excel(excel_path, index=False, engine='openpyxl')
+    wb.save(excel_path)
+    wb.close()
 
-    return FileResponse(excel_path, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename=f"receipts_selected_{u_id}.xlsx")
+    return FileResponse(excel_path, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename=f"経費精算書_{today.replace('/', '')}.xlsx")
 
 @router.post("/api/export/selected/pdf")
 async def export_selected_pdf(data: dict, u_id: str = Depends(get_current_user)):
