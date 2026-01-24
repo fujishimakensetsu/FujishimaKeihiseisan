@@ -68,6 +68,48 @@
         }
     </script>
     <style>
+        :root {
+            color-scheme: light dark;
+            /* ライトモードのデフォルト */
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border-color: #e2e8f0;
+            --accent-color: #0ea5e9;
+            --accent-hover: #0284c7;
+            --glass-bg: rgba(255, 255, 255, 0.8);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --card-bg: #ffffff;
+            --card-hover: #f8fafc;
+            --input-bg: #ffffff;
+            --input-border: #e2e8f0;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-primary: #0a0a0f;
+                --bg-secondary: #12121a;
+                --bg-tertiary: #1a1a25;
+                --text-primary: #f1f5f9;
+                --text-secondary: #94a3b8;
+                --text-muted: #64748b;
+                --border-color: rgba(255, 255, 255, 0.1);
+                --accent-color: #00d4ff;
+                --accent-hover: #00b8e6;
+                --glass-bg: rgba(255, 255, 255, 0.03);
+                --glass-border: rgba(255, 255, 255, 0.08);
+                --card-bg: rgba(255, 255, 255, 0.02);
+                --card-hover: rgba(255, 255, 255, 0.04);
+                --input-bg: rgba(255, 255, 255, 0.05);
+                --input-border: rgba(255, 255, 255, 0.1);
+                --shadow-color: rgba(0, 0, 0, 0.3);
+            }
+        }
+
         * {
             font-family: 'Noto Sans JP', sans-serif;
         }
@@ -76,30 +118,42 @@
             font-family: 'Outfit', sans-serif;
         }
 
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
         .hidden { display: none !important; }
 
         /* グラデーション背景 */
         .bg-gradient-dark {
-            background: linear-gradient(135deg, #0a0a0f 0%, #12121a 50%, #1a1025 100%);
+            background: var(--bg-primary);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .bg-gradient-dark {
+                background: linear-gradient(135deg, #0a0a0f 0%, #12121a 50%, #1a1025 100%);
+            }
         }
 
         /* ガラスモーフィズム */
         .glass {
-            background: rgba(255, 255, 255, 0.03);
+            background: var(--glass-bg);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--glass-border);
         }
 
         .glass-light {
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--bg-secondary);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
         }
 
         /* グラデーションテキスト */
         .text-gradient {
-            background: linear-gradient(135deg, #00d4ff 0%, #10b981 100%);
+            background: linear-gradient(135deg, var(--accent-color) 0%, #10b981 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -107,7 +161,8 @@
 
         /* ボタングラデーション */
         .btn-gradient {
-            background: linear-gradient(135deg, #00d4ff 0%, #10b981 100%);
+            background: linear-gradient(135deg, var(--accent-color) 0%, #10b981 100%);
+            color: white;
             transition: all 0.3s ease;
         }
 
@@ -117,52 +172,90 @@
         }
 
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: var(--text-primary);
             transition: all 0.3s ease;
         }
 
         .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.2);
+            background: var(--card-hover);
+            border-color: var(--border-color);
         }
 
         /* インプットスタイル */
         .input-modern {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: var(--text-primary);
             transition: all 0.3s ease;
         }
 
         .input-modern:focus {
             outline: none;
-            border-color: #00d4ff;
+            border-color: var(--accent-color);
             box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
         }
 
+        .input-modern option {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
         .input-light {
-            background: rgba(0, 0, 0, 0.03);
-            border: 1px solid rgba(0, 0, 0, 0.08);
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: var(--text-primary);
             transition: all 0.3s ease;
         }
 
         .input-light:focus {
             outline: none;
-            border-color: #00d4ff;
+            border-color: var(--accent-color);
             box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
         }
 
         /* カードスタイル */
         .card-dark {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
             transition: all 0.3s ease;
         }
 
         .card-dark:hover {
-            background: rgba(255, 255, 255, 0.04);
-            border-color: rgba(255, 255, 255, 0.1);
+            background: var(--card-hover);
+            border-color: var(--border-color);
             transform: translateY(-2px);
+        }
+
+        /* テキストカラー */
+        .text-adaptive {
+            color: var(--text-primary);
+        }
+
+        .text-adaptive-secondary {
+            color: var(--text-secondary);
+        }
+
+        .text-adaptive-muted {
+            color: var(--text-muted);
+        }
+
+        /* ダークモード専用表示 */
+        .dark-only {
+            display: none;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .dark-only {
+                display: block;
+            }
+        }
+
+        /* セレクトボックスのオプション */
+        select option {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
         }
 
         /* スピナー */
@@ -233,23 +326,20 @@
         }
     </style>
 </head>
-<body class="bg-gradient-dark min-h-screen text-white">
+<body class="bg-gradient-dark min-h-screen text-adaptive">
 
-    <!-- 背景装飾 -->
-    <div class="bg-orb w-96 h-96 bg-cyan-500 top-0 left-0"></div>
-    <div class="bg-orb w-80 h-80 bg-emerald-500 bottom-0 right-0"></div>
-    <div class="bg-orb w-64 h-64 bg-violet-500 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
+    <!-- 背景装飾（ダークモードのみ表示） -->
+    <div class="bg-orb w-96 h-96 bg-cyan-500 top-0 left-0 dark-only"></div>
+    <div class="bg-orb w-80 h-80 bg-emerald-500 bottom-0 right-0 dark-only"></div>
+    <div class="bg-orb w-64 h-64 bg-violet-500 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 dark-only"></div>
 
     <!-- ログイン・登録オーバーレイ -->
     <div id="authOverlay" class="fixed inset-0 bg-gradient-dark z-[100] flex items-center justify-center p-6">
         <div class="glass-light w-full max-w-md p-10 rounded-3xl shadow-2xl animate-slide-up">
             <!-- ロゴ -->
             <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-emerald-500 mb-4 animate-float">
-                    <span class="text-3xl">🤖</span>
-                </div>
-                <h2 class="font-display text-3xl font-bold text-gray-900">SmartBuilder AI</h2>
-                <p class="text-gray-500 mt-2 text-sm">領収書管理をスマートに</p>
+                <h2 class="font-display text-3xl font-bold text-adaptive">経費精算AI</h2>
+                <p class="text-adaptive-secondary mt-2 text-sm">領収書管理をスマートに</p>
             </div>
 
             <!-- タブ切り替え -->
@@ -360,11 +450,6 @@
 
         <!-- ダッシュボードタブ -->
         <div id="dashboardTab" class="space-y-6">
-
-            <!-- サブスク情報 -->
-            <div id="subscriptionInfo" class="glass p-6 rounded-2xl">
-                <!-- JavaScriptで動的に生成 -->
-            </div>
 
             <!-- 検索・フィルター -->
             <div class="glass p-6 rounded-2xl">
@@ -582,7 +667,7 @@
     <!-- 画像モーダル -->
     <div id="imageModal" class="hidden fixed inset-0 bg-black/95 z-50 flex flex-col">
         <!-- ヘッダー -->
-        <div class="flex justify-between items-center p-4 glass">
+        <div class="flex justify-between items-center p-4 bg-black/50 backdrop-blur-sm sticky top-0 z-10">
             <div id="pageInfo" class="text-white text-sm font-medium px-4 py-2 rounded-xl bg-white/10">
                 1 / 1
             </div>
@@ -594,9 +679,9 @@
             </button>
         </div>
         <!-- 画像コンテナ -->
-        <div id="imageContainer" class="flex-1 overflow-y-auto flex flex-col items-center p-4 gap-4">
-            <img id="modalImage" src="" class="max-w-full object-contain hidden">
-            <div id="multiImageContainer" class="hidden w-full max-w-4xl space-y-4">
+        <div id="imageContainer" class="flex-1 overflow-y-auto flex flex-col items-center p-4 gap-6">
+            <img id="modalImage" src="" class="max-w-full max-h-[85vh] object-contain hidden">
+            <div id="multiImageContainer" class="hidden w-full max-w-5xl space-y-6 pb-8">
                 <!-- JavaScriptで動的に生成 -->
             </div>
         </div>
@@ -605,64 +690,23 @@
     <!-- ユーザー作成モーダル -->
     <div id="createUserModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="glass-light rounded-3xl shadow-2xl max-w-md w-full p-8 animate-slide-up">
-            <h2 class="font-display text-2xl font-bold text-gray-900 mb-6">新規ユーザー作成</h2>
+            <h2 class="font-display text-2xl font-bold text-adaptive mb-6">新規ユーザー作成</h2>
             <div class="space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">メールアドレス</label>
-                    <input type="email" id="newUserEmail" class="w-full p-3 rounded-xl input-light text-gray-900">
+                    <label class="block text-xs font-semibold text-adaptive-secondary uppercase tracking-wider mb-2">メールアドレス</label>
+                    <input type="email" id="newUserEmail" class="w-full p-3 rounded-xl input-light">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">パスワード</label>
-                    <input type="password" id="newUserPassword" class="w-full p-3 rounded-xl input-light text-gray-900">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">プラン</label>
-                    <select id="newUserPlan" class="w-full p-3 rounded-xl input-light text-gray-900">
-                        <option value="free">Free (10件/月)</option>
-                        <option value="premium">Premium (100件/月)</option>
-                        <option value="enterprise">Enterprise (1000件/月)</option>
-                    </select>
+                    <label class="block text-xs font-semibold text-adaptive-secondary uppercase tracking-wider mb-2">パスワード</label>
+                    <input type="password" id="newUserPassword" class="w-full p-3 rounded-xl input-light">
                 </div>
             </div>
             <div class="flex gap-3 mt-8">
                 <button onclick="createUser()" class="flex-1 btn-gradient font-bold py-3 rounded-xl">
                     作成
                 </button>
-                <button onclick="closeCreateUserModal()" class="flex-1 bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">
+                <button onclick="closeCreateUserModal()" class="flex-1 btn-secondary font-bold py-3 rounded-xl">
                     キャンセル
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- プラン変更モーダル -->
-    <div id="changePlanModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="glass-light rounded-3xl shadow-2xl max-w-md w-full p-8 animate-slide-up">
-            <h2 class="font-display text-2xl font-bold text-gray-900 mb-6">プラン変更</h2>
-
-            <div class="mb-6 p-4 bg-gray-100 rounded-xl">
-                <p class="text-xs text-gray-500 mb-1">ユーザー</p>
-                <p class="font-bold text-gray-900" id="changePlanEmail"></p>
-            </div>
-
-            <div class="mb-6">
-                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">新しいプラン</label>
-                <select id="newPlanSelect" class="w-full p-3 rounded-xl input-light text-gray-900">
-                    <option value="free">無料プラン (10件/月)</option>
-                    <option value="premium">プレミアムプラン (100件/月)</option>
-                    <option value="enterprise">エンタープライズプラン (1,000件/月)</option>
-                    <option value="unlimited">無制限プラン</option>
-                </select>
-            </div>
-
-            <div class="flex gap-3">
-                <button onclick="closeChangePlanModal()"
-                        class="flex-1 bg-gray-100 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-200 transition-colors">
-                    キャンセル
-                </button>
-                <button onclick="confirmChangePlan()"
-                        class="flex-1 btn-gradient font-bold py-3 rounded-xl">
-                    変更する
                 </button>
             </div>
         </div>
@@ -923,74 +967,11 @@
                 const data = await res.json();
                 allRecords = data.records.reverse();
 
-                displaySubscriptionInfo(data.subscription);
                 checkLineStatus();
                 applyFilters();
             } catch (e) {
                 console.error(e);
             }
-        }
-
-        // サブスク情報を表示
-        function displaySubscriptionInfo(subscription) {
-            const planNames = {
-                'free': '無料プラン',
-                'premium': 'プレミアムプラン',
-                'enterprise': 'エンタープライズプラン',
-                'unlimited': '無制限プラン'
-            };
-
-            const planColors = {
-                'free': 'from-gray-400 to-gray-500',
-                'premium': 'from-cyan-400 to-emerald-400',
-                'enterprise': 'from-violet-400 to-purple-500',
-                'unlimited': 'from-amber-400 to-orange-500'
-            };
-
-            const plan = subscription.plan || 'free';
-            const planName = planNames[plan] || plan;
-            const planColor = planColors[plan] || planColors['free'];
-            const used = subscription.used || 0;
-            const limit = subscription.limit || 10;
-            const percentage = Math.min((used / limit) * 100, 100);
-
-            let upgradeButton = '';
-            if (plan === 'free') {
-                upgradeButton = `
-                    <button onclick="alert('プランのアップグレードをご希望の場合は、管理者にお問い合わせください。')"
-                            class="btn-gradient px-6 py-3 rounded-xl font-semibold text-sm">
-                        プランをアップグレード
-                    </button>
-                `;
-            }
-
-            document.getElementById('subscriptionInfo').innerHTML = `
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                    <div class="flex-1">
-                        <div class="flex items-center gap-3 mb-3">
-                            <div class="w-10 h-10 rounded-xl bg-gradient-to-br ${planColor} flex items-center justify-center">
-                                <span class="text-xl">✨</span>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-400 uppercase tracking-wider">現在のプラン</p>
-                                <p class="font-display text-xl font-bold text-gradient">${planName}</p>
-                            </div>
-                        </div>
-                        <div class="mt-4">
-                            <div class="flex justify-between text-sm mb-2">
-                                <span class="text-gray-400">使用状況</span>
-                                <span class="font-semibold">${used} / ${limit}件</span>
-                            </div>
-                            <div class="w-full bg-white/5 rounded-full h-2 overflow-hidden">
-                                <div class="progress-gradient h-2 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div>
-                        ${upgradeButton}
-                    </div>
-                </div>
-            `;
         }
 
         // フィルター適用
@@ -1650,11 +1631,11 @@
                 pageInfo.textContent = `全${images.length}ページ`;
 
                 multiContainer.innerHTML = images.map((url, idx) => `
-                    <div class="relative glass rounded-xl overflow-hidden">
-                        <div class="absolute top-3 left-3 bg-black/50 backdrop-blur-sm text-white text-sm px-3 py-1 rounded-lg font-medium">
+                    <div class="relative bg-white rounded-xl overflow-hidden shadow-lg">
+                        <div class="absolute top-3 left-3 z-10 bg-black/70 backdrop-blur-sm text-white text-sm px-3 py-1 rounded-lg font-medium">
                             ${idx + 1} / ${images.length}
                         </div>
-                        <img src="${url}" class="w-full" alt="ページ ${idx + 1}">
+                        <img src="${url}" class="w-full h-auto block" alt="ページ ${idx + 1}" style="max-height: none;">
                     </div>
                 `).join('');
             }
@@ -1744,40 +1725,24 @@
                 }
 
                 usersList.innerHTML = data.users.map((user, index) => {
-                    const sub = user.subscription || {};
-                    const planNames = {
-                        'free': '無料プラン',
-                        'premium': 'プレミアムプラン',
-                        'enterprise': 'エンタープライズプラン',
-                        'unlimited': '無制限プラン'
-                    };
-                    const planName = planNames[sub.plan] || sub.plan;
                     const roleLabel = user.role === 'admin' ? '🔑 管理者' : '👤 ユーザー';
-                    const used = sub.used || 0;
-                    const limit = sub.limit || 10;
 
                     return `
                     <div class="card-dark p-5 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 animate-fade-in" style="animation-delay: ${index * 0.05}s">
                         <div class="flex-1">
                             <div class="flex items-center gap-3 mb-2 flex-wrap">
-                                <p class="font-semibold text-white">${user.email}</p>
-                                <span class="text-xs px-2 py-1 rounded-lg ${user.role === 'admin' ? 'bg-violet-500/20 text-violet-400' : 'bg-gray-500/20 text-gray-400'}">${roleLabel}</span>
+                                <p class="font-semibold text-adaptive">${user.email}</p>
+                                <span class="text-xs px-2 py-1 rounded-lg ${user.role === 'admin' ? 'bg-violet-500/20 text-violet-400' : 'bg-gray-500/20 text-adaptive-secondary'}">${roleLabel}</span>
                             </div>
-                            <p class="text-sm text-gray-400 mb-1">プラン: ${planName}</p>
-                            <p class="text-xs text-gray-500">使用状況: ${used} / ${limit}件</p>
                             ${user.line_user_id ? '<p class="text-xs text-emerald-400 mt-1">✅ LINE連携済み</p>' : ''}
                         </div>
                         <div class="flex gap-2">
                             ${user.role !== 'admin' ? `
-                                <button onclick="changePlan('${user.id}', '${user.email}', '${sub.plan || 'free'}')"
-                                        class="px-4 py-2 rounded-xl text-sm font-medium bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition-colors">
-                                    プラン変更
-                                </button>
                                 <button onclick="deleteUser('${user.id}', '${user.email}')"
                                         class="px-4 py-2 rounded-xl text-sm font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors">
                                     削除
                                 </button>
-                            ` : '<span class="text-gray-500 text-sm px-4 py-2">管理者は削除不可</span>'}
+                            ` : '<span class="text-adaptive-muted text-sm px-4 py-2">管理者は削除不可</span>'}
                         </div>
                     </div>
                     `;
@@ -1799,7 +1764,6 @@
         async function createUser() {
             const email = document.getElementById('newUserEmail').value;
             const password = document.getElementById('newUserPassword').value;
-            const plan = document.getElementById('newUserPlan').value;
 
             if (!email || !password) {
                 alert('メールアドレスとパスワードを入力してください');
@@ -1810,7 +1774,7 @@
                 const res = await authFetch('/admin/users', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password, plan })
+                    body: JSON.stringify({ email, password, plan: 'unlimited' })
                 });
 
                 if (res.ok) {
@@ -1824,53 +1788,6 @@
             } catch (e) {
                 console.error(e);
                 alert('ユーザー作成に失敗しました');
-            }
-        }
-
-        // プラン変更
-        let changingUserId = null;
-        let changingUserEmail = null;
-
-        function changePlan(userId, email, currentPlan) {
-            changingUserId = userId;
-            changingUserEmail = email;
-            document.getElementById('changePlanEmail').textContent = email;
-            document.getElementById('newPlanSelect').value = currentPlan || 'free';
-            document.getElementById('changePlanModal').classList.remove('hidden');
-        }
-
-        function closeChangePlanModal() {
-            changingUserId = null;
-            changingUserEmail = null;
-            document.getElementById('changePlanModal').classList.add('hidden');
-        }
-
-        async function confirmChangePlan() {
-            if (!changingUserId) return;
-
-            const newPlan = document.getElementById('newPlanSelect').value;
-            showLoading('プランを変更中...', '');
-
-            try {
-                const res = await authFetch(`/admin/users/${changingUserId}/plan`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ plan: newPlan })
-                });
-
-                if (res.ok) {
-                    alert('プランを変更しました');
-                    closeChangePlanModal();
-                    loadUsers();
-                } else {
-                    const error = await res.json();
-                    alert(`プラン変更に失敗しました: ${error.detail}`);
-                }
-            } catch (e) {
-                console.error(e);
-                alert('プラン変更に失敗しました');
-            } finally {
-                hideLoading();
             }
         }
 
