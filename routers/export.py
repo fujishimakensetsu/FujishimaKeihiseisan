@@ -177,7 +177,7 @@ async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depend
     # === ICカード交通費欄（Z-AE列）にデータを書き込み ===
     transport_row = 7  # 7行目から開始
     for record in sorted(transport_records, key=lambda x: x.get("date", ""), reverse=True):
-        if transport_row > 16:  # 最大10件
+        if transport_row > 24:  # 最大18件（7行目〜24行目）
             break
 
         date = record.get("date", "")
@@ -422,7 +422,7 @@ async def export_selected_excel(data: dict, u_id: str = Depends(get_current_user
     # === ICカード交通費欄（Z-AE列）にデータを書き込み ===
     transport_row = 7  # 7行目から開始
     for record in sorted(transport_records, key=lambda x: x.get("date", ""), reverse=True):
-        if transport_row > 16:  # 最大10件
+        if transport_row > 24:  # 最大18件（7行目〜24行目）
             break
 
         date = record.get("date", "")

@@ -488,44 +488,28 @@
                     </div>
                     <h3 class="font-display text-lg font-semibold">検索・フィルター</h3>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">店舗名検索</label>
+                        <label class="block text-xs font-semibold text-adaptive-secondary uppercase tracking-wider mb-2">店舗名検索</label>
                         <input type="text" id="searchVendor" placeholder="店舗名を入力"
-                               class="w-full p-3 rounded-xl input-modern text-white placeholder-gray-500"
+                               class="w-full p-3 rounded-xl input-modern"
                                oninput="applyFilters()">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">開始日</label>
+                        <label class="block text-xs font-semibold text-adaptive-secondary uppercase tracking-wider mb-2">開始日</label>
                         <input type="date" id="filterStartDate"
-                               class="w-full p-3 rounded-xl input-modern text-white"
+                               class="w-full p-3 rounded-xl input-modern"
                                onchange="applyFilters()">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">終了日</label>
+                        <label class="block text-xs font-semibold text-adaptive-secondary uppercase tracking-wider mb-2">終了日</label>
                         <input type="date" id="filterEndDate"
-                               class="w-full p-3 rounded-xl input-modern text-white"
+                               class="w-full p-3 rounded-xl input-modern"
                                onchange="applyFilters()">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">カテゴリ</label>
-                        <select id="filterCategory"
-                                class="w-full p-3 rounded-xl input-modern text-white"
-                                onchange="applyFilters()">
-                            <option value="">すべて</option>
-                            <option value="食費">🍽️ 食費</option>
-                            <option value="交通費">🚃 交通費</option>
-                            <option value="事務用品">🏢 事務用品</option>
-                            <option value="光熱費">💡 光熱費</option>
-                            <option value="通信費">📱 通信費</option>
-                            <option value="医療費">🏥 医療費</option>
-                            <option value="交際費">🎉 交際費</option>
-                            <option value="その他">📦 その他</option>
-                        </select>
                     </div>
                 </div>
                 <div class="mt-4 flex justify-end">
-                    <button onclick="clearFilters()" class="btn-secondary px-4 py-2 rounded-xl text-sm font-medium text-gray-400 hover:text-white transition-colors">
+                    <button onclick="clearFilters()" class="btn-secondary px-4 py-2 rounded-xl text-sm font-medium transition-colors">
                         フィルターをクリア
                     </button>
                 </div>
@@ -551,7 +535,7 @@
             <!-- エクスポート&一括操作 -->
             <div class="flex gap-3 flex-wrap">
                 <button onclick="toggleBulkMode()" id="bulkModeToggle"
-                        class="btn-secondary px-5 py-3 rounded-xl font-medium text-sm text-gray-300 hover:text-white transition-colors flex items-center gap-2">
+                        class="btn-secondary px-5 py-3 rounded-xl font-medium text-sm transition-colors flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                     </svg>
@@ -571,17 +555,17 @@
             <!-- 一括操作パネル -->
             <div id="bulkActions" class="hidden glass p-4 rounded-xl animate-slide-up">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-                    <p class="font-medium text-gray-300">
+                    <p class="font-medium text-adaptive">
                         <span id="selectedCount" class="text-cyan-400 font-bold">0</span>件選択中
                     </p>
                     <div class="flex gap-2 flex-wrap">
                         <button onclick="selectAll()" class="btn-gradient px-4 py-2 rounded-lg text-sm font-medium">
                             全て選択
                         </button>
-                        <button onclick="deselectAll()" class="btn-secondary px-4 py-2 rounded-lg text-sm font-medium text-gray-400">
+                        <button onclick="deselectAll()" class="btn-secondary px-4 py-2 rounded-lg text-sm font-medium">
                             選択解除
                         </button>
-                        <button onclick="toggleBulkMode()" class="btn-secondary px-4 py-2 rounded-lg text-sm font-medium text-gray-400">
+                        <button onclick="toggleBulkMode()" class="btn-secondary px-4 py-2 rounded-lg text-sm font-medium">
                             終了
                         </button>
                     </div>
@@ -660,19 +644,6 @@
                         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">金額（円） <span class="text-red-500">*</span></label>
                         <input type="number" id="editAmount" class="w-full p-3 rounded-xl input-light text-gray-900" placeholder="金額を入力" min="0">
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">カテゴリ</label>
-                        <select id="editCategory" class="w-full p-3 rounded-xl input-light text-gray-900">
-                            <option value="食費">🍽️ 食費</option>
-                            <option value="交通費">🚃 交通費</option>
-                            <option value="事務用品">🏢 事務用品</option>
-                            <option value="光熱費">💡 光熱費</option>
-                            <option value="通信費">📱 通信費</option>
-                            <option value="医療費">🏥 医療費</option>
-                            <option value="交際費">🎉 交際費</option>
-                            <option value="その他">📦 その他</option>
-                        </select>
-                    </div>
                 </div>
 
                 <!-- 右側：画像プレビュー -->
@@ -713,7 +684,7 @@
         <!-- 画像コンテナ -->
         <div id="imageContainer" class="flex-1 overflow-y-auto flex flex-col items-center p-4 gap-6">
             <img id="modalImage" src="" class="max-w-full max-h-[85vh] object-contain hidden">
-            <div id="multiImageContainer" class="hidden w-full max-w-5xl space-y-6 pb-8">
+            <div id="multiImageContainer" class="hidden w-full max-w-2xl space-y-4 pb-8">
                 <!-- JavaScriptで動的に生成 -->
             </div>
         </div>
@@ -756,24 +727,6 @@
             <div class="space-y-4">
                 <div>
                     <label class="flex items-center gap-2 mb-2 cursor-pointer">
-                        <input type="checkbox" id="bulkEditCategoryCheck" onchange="toggleBulkEditField('category')" class="w-4 h-4 rounded text-cyan-500">
-                        <span class="text-sm font-semibold text-gray-700">カテゴリを変更</span>
-                    </label>
-                    <select id="bulkEditCategory" disabled class="w-full p-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-900">
-                        <option value="">選択してください</option>
-                        <option value="食費">🍽️ 食費</option>
-                        <option value="交通費">🚃 交通費</option>
-                        <option value="事務用品">🏢 事務用品</option>
-                        <option value="光熱費">💡 光熱費</option>
-                        <option value="通信費">📱 通信費</option>
-                        <option value="医療費">🏥 医療費</option>
-                        <option value="交際費">🎉 交際費</option>
-                        <option value="その他">📦 その他</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="flex items-center gap-2 mb-2 cursor-pointer">
                         <input type="checkbox" id="bulkEditDateCheck" onchange="toggleBulkEditField('date')" class="w-4 h-4 rounded text-cyan-500">
                         <span class="text-sm font-semibold text-gray-700">日付を変更</span>
                     </label>
@@ -805,18 +758,6 @@
         let allRecords = [];
         let currentImageIndex = 0;
         let currentImages = [];
-
-        // カテゴリアイコン
-        const categoryIcons = {
-            '食費': '🍽️',
-            '交通費': '🚃',
-            '事務用品': '🏢',
-            '光熱費': '💡',
-            '通信費': '📱',
-            '医療費': '🏥',
-            '交際費': '🎉',
-            'その他': '📦'
-        };
 
         // 認証チェック付きFetch
         async function authFetch(url, options = {}) {
@@ -1016,7 +957,6 @@
             const searchVendor = document.getElementById('searchVendor').value.toLowerCase();
             const startDate = document.getElementById('filterStartDate').value;
             const endDate = document.getElementById('filterEndDate').value;
-            const category = document.getElementById('filterCategory').value;
 
             let filtered = allRecords.filter(r => {
                 if (searchVendor && !r.vendor_name.toLowerCase().includes(searchVendor)) {
@@ -1026,9 +966,6 @@
                     return false;
                 }
                 if (endDate && r.date > endDate) {
-                    return false;
-                }
-                if (category && r.category !== category) {
                     return false;
                 }
                 return true;
@@ -1042,7 +979,6 @@
             document.getElementById('searchVendor').value = '';
             document.getElementById('filterStartDate').value = '';
             document.getElementById('filterEndDate').value = '';
-            document.getElementById('filterCategory').value = '';
             renderRecords(allRecords);
         }
 
@@ -1077,7 +1013,6 @@
 
             list.innerHTML = records.map((r, index) => {
                 const displayUrl = (r.pdf_images && r.pdf_images.length > 0) ? r.pdf_images[0] : r.image_url;
-                const categoryIcon = categoryIcons[r.category] || '📦';
 
                 return `
                 <div class="record-card p-4 md:p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 animate-fade-in" style="animation-delay: ${index * 0.05}s">
@@ -1100,7 +1035,6 @@
                         <div class="flex-1 min-w-0">
                             <p class="text-xs text-adaptive-muted mb-0.5">${r.date}${r.exported ? ' <span class="text-emerald-400">✓出力済</span>' : ''}</p>
                             <p class="font-semibold text-adaptive truncate">${r.vendor_name}</p>
-                            <p class="text-xs text-adaptive-secondary mt-0.5">${categoryIcon} ${r.category || 'その他'}</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
@@ -1216,7 +1150,6 @@
             document.getElementById('editDate').value = record.date || '';
             document.getElementById('editVendor').value = record.vendor_name || '';
             document.getElementById('editAmount').value = record.total_amount || '';
-            document.getElementById('editCategory').value = record.category || 'その他';
 
             const previewImg = document.getElementById('editPreviewImg');
             const noImage = document.getElementById('editNoImage');
@@ -1259,9 +1192,8 @@
             const date = document.getElementById('editDate').value.trim();
             const vendor = document.getElementById('editVendor').value.trim();
             const amount = document.getElementById('editAmount').value;
-            const category = document.getElementById('editCategory').value;
 
-            console.log('Saving edit:', { record_id: editingRecordId, date, vendor, amount, category });
+            console.log('Saving edit:', { record_id: editingRecordId, date, vendor, amount });
 
             if (!date) {
                 alert('日付を入力してください');
@@ -1288,8 +1220,7 @@
                     body: JSON.stringify({
                         date: date,
                         vendor_name: vendor,
-                        total_amount: parseInt(amount),
-                        category: category
+                        total_amount: parseInt(amount)
                     })
                 });
 
@@ -1512,11 +1443,8 @@
             }
 
             document.getElementById('bulkEditCount').textContent = selectedRecords.size;
-            document.getElementById('bulkEditCategoryCheck').checked = false;
             document.getElementById('bulkEditDateCheck').checked = false;
-            document.getElementById('bulkEditCategory').disabled = true;
             document.getElementById('bulkEditDate').disabled = true;
-            document.getElementById('bulkEditCategory').value = '';
             document.getElementById('bulkEditDate').value = '';
 
             document.getElementById('bulkEditModal').classList.remove('hidden');
@@ -1527,14 +1455,7 @@
         }
 
         function toggleBulkEditField(field) {
-            if (field === 'category') {
-                const checked = document.getElementById('bulkEditCategoryCheck').checked;
-                const select = document.getElementById('bulkEditCategory');
-                select.disabled = !checked;
-                if (!checked) select.value = '';
-                select.classList.toggle('bg-gray-100', !checked);
-                select.classList.toggle('bg-white', checked);
-            } else if (field === 'date') {
+            if (field === 'date') {
                 const checked = document.getElementById('bulkEditDateCheck').checked;
                 const input = document.getElementById('bulkEditDate');
                 input.disabled = !checked;
@@ -1545,24 +1466,14 @@
         }
 
         async function confirmBulkEdit() {
-            const categoryChecked = document.getElementById('bulkEditCategoryCheck').checked;
             const dateChecked = document.getElementById('bulkEditDateCheck').checked;
 
-            if (!categoryChecked && !dateChecked) {
+            if (!dateChecked) {
                 alert('変更する項目を選択してください');
                 return;
             }
 
             const updateFields = {};
-
-            if (categoryChecked) {
-                const category = document.getElementById('bulkEditCategory').value;
-                if (!category) {
-                    alert('カテゴリを選択してください');
-                    return;
-                }
-                updateFields.category = category;
-            }
 
             if (dateChecked) {
                 const date = document.getElementById('bulkEditDate').value;
@@ -1832,15 +1743,15 @@
                 pageInfo.textContent = `全${images.length}ページ`;
 
                 multiContainer.innerHTML = images.map((url, idx) => `
-                    <div class="relative bg-white rounded-xl overflow-hidden shadow-lg" style="min-height: 100px;">
-                        <div class="absolute top-3 left-3 z-10 bg-black/70 backdrop-blur-sm text-white text-sm px-3 py-1 rounded-lg font-medium">
+                    <div class="relative bg-white rounded-xl overflow-hidden shadow-lg" style="min-height: 80px;">
+                        <div class="absolute top-2 left-2 z-10 bg-black/70 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-lg font-medium">
                             ${idx + 1} / ${images.length}
                         </div>
                         <img src="${url}"
                              class="w-full h-auto block"
                              alt="ページ ${idx + 1}"
-                             style="max-height: none;"
-                             onerror="this.alt='読み込み失敗'; this.style.minHeight='200px'; this.style.background='#666';">
+                             style="max-height: 70vh;"
+                             onerror="this.alt='読み込み失敗'; this.style.minHeight='150px'; this.style.background='#666';">
                     </div>
                 `).join('');
             }
