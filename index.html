@@ -1389,6 +1389,7 @@
 
             showLoading('削除中...', `出力済み${exportedRecords.length}件を削除しています`);
 
+            let success = false;
             try {
                 const res = await authFetch('/api/records/bulk-delete-exported', {
                     method: 'POST',
@@ -1398,9 +1399,7 @@
                 if (res.ok) {
                     const data = await res.json();
                     alert(data.message);
-                    selectedRecords.clear();
-                    if (isBulkMode) toggleBulkMode();
-                    await loadStatus();
+                    success = true;
                 } else {
                     alert('削除に失敗しました');
                 }
@@ -1409,6 +1408,13 @@
                 alert('削除に失敗しました');
             } finally {
                 hideLoading();
+            }
+
+            // 成功時は状態をリセットして画面を更新（try外で行うことでエラーと混同しない）
+            if (success) {
+                selectedRecords.clear();
+                if (isBulkMode) toggleBulkMode();
+                await loadStatus();
             }
         }
 
