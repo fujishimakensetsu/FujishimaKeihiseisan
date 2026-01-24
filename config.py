@@ -90,7 +90,7 @@ STRIPE_ENABLED = False
 
 # === CORS設定 ===
 ALLOWED_ORIGINS = [
-    "https://my-ai-app-643484544688.asia-northeast1.run.app",  # 本番URL
+    "https://fujishima-keihiseisan-4ihgmtlxmq-an.a.run.app",  # 本番URL
     "http://localhost:8000",  # ローカル開発用
     "http://127.0.0.1:8000",  # ローカル開発用
 ]
