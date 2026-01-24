@@ -200,7 +200,7 @@ async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depend
     # ※「ICカード交通費」という文言が明示的に記載されたPDFのデータのみ出力
     # ※通常のレシートや交通系ICカードの利用履歴はここには出力されない
     transport_row = 7  # 7行目から開始
-    for record in sorted(transport_records, key=lambda x: x.get("date", ""), reverse=True):
+    for record in sorted(transport_records, key=lambda x: x.get("date", "")):
         if transport_row > 24:  # 最大18件（7行目〜24行目）
             break
 
