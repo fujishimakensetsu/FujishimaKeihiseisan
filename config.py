@@ -19,7 +19,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24時間
 
 # === Cloud Storage設定 ===
-BUCKET_NAME = "my-receipt-app-storage-01"
+BUCKET_NAME = "fujishima-receipt-storage"
 
 # === Firestore コレクション名 ===
 COL_USERS = "users"

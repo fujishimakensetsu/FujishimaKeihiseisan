@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ===== 認証情報を設定 =====
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "gen-lang-client-0553940805-e017df0cff23.json"
+# gcloud auth application-default login で認証済みのため、環境変数設定は不要
 
 db = firestore.Client()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
