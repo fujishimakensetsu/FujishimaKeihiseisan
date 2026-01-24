@@ -358,45 +358,50 @@
             </div>
 
             <!-- ログインフォーム -->
-            <div id="loginForm" class="space-y-4">
+            <form id="loginForm" class="space-y-4" autocomplete="off" onsubmit="event.preventDefault(); login();">
                 <div>
                     <label class="block text-xs font-semibold text-adaptive-secondary uppercase tracking-wider mb-2">メールアドレス</label>
                     <input type="email" id="loginEmail" placeholder="your@email.com"
+                           autocomplete="username"
                            class="w-full p-4 rounded-xl input-light">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-adaptive-secondary uppercase tracking-wider mb-2">パスワード</label>
                     <input type="password" id="loginPassword" placeholder="••••••••"
+                           autocomplete="current-password"
                            class="w-full p-4 rounded-xl input-light">
                 </div>
-                <button onclick="login()"
+                <button type="submit"
                         class="w-full btn-gradient text-white font-bold py-4 rounded-xl mt-6">
                     ログイン
                 </button>
-            </div>
+            </form>
 
             <!-- 登録フォーム -->
-            <div id="registerForm" class="hidden space-y-4">
+            <form id="registerForm" class="hidden space-y-4" autocomplete="off" onsubmit="event.preventDefault(); register();">
                 <div>
                     <label class="block text-xs font-semibold text-adaptive-secondary uppercase tracking-wider mb-2">メールアドレス</label>
                     <input type="email" id="registerEmail" placeholder="your@email.com"
+                           autocomplete="username"
                            class="w-full p-4 rounded-xl input-light">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-adaptive-secondary uppercase tracking-wider mb-2">パスワード（8文字以上）</label>
                     <input type="password" id="registerPassword" placeholder="••••••••"
+                           autocomplete="new-password"
                            class="w-full p-4 rounded-xl input-light">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-adaptive-secondary uppercase tracking-wider mb-2">パスワード（確認）</label>
                     <input type="password" id="registerPasswordConfirm" placeholder="••••••••"
+                           autocomplete="new-password"
                            class="w-full p-4 rounded-xl input-light">
                 </div>
-                <button onclick="register()"
+                <button type="submit"
                         class="w-full btn-gradient text-white font-bold py-4 rounded-xl mt-6">
                     アカウント作成
                 </button>
-            </div>
+            </form>
         </div>
     </div>
 
