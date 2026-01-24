@@ -159,19 +159,14 @@ async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depend
     wb = openpyxl.load_workbook(template_path)
     ws = wb.active
 
-    # === 経費精算欄（B-S列）にデータを書き込み ===
-    row = 9
+    # === 経費精算欄にデータを書き込み ===
 
-    # 駐車場代を1行で出力（合算）
+    # 駐車場代は10行目のS列のみに出力（合算金額のみ）
     if parking_total > 0:
-        date_str = parking_dates[0] if parking_dates else ""
-        ws.cell(row=row, column=2, value=date_str)  # B列: 支払日
-        ws.cell(row=row, column=5, value="駐車場代")  # E列: 支払先
-        ws.cell(row=row, column=8, value="駐車場代")  # H列: 支払事由
-        ws.cell(row=row, column=19, value=parking_total)  # S列: 支払額（10%）
-        row += 1
+        ws.cell(row=10, column=19, value=parking_total)  # S10: 駐車場代合算
 
-    # その他のレコード（店舗名集計済み）
+    # その他のレコードは11行目から出力（店舗名集計済み）
+    row = 11
     for vendor_name, data in sorted(vendor_totals.items(), key=lambda x: x[1]["amount"], reverse=True):
         if row > 29:
             break
@@ -415,19 +410,14 @@ async def export_selected_excel(data: dict, u_id: str = Depends(get_current_user
     wb = openpyxl.load_workbook(template_path)
     ws = wb.active
 
-    # === 経費精算欄（B-S列）にデータを書き込み ===
-    row = 9
+    # === 経費精算欄にデータを書き込み ===
 
-    # 駐車場代を1行で出力（合算）
+    # 駐車場代は10行目のS列のみに出力（合算金額のみ）
     if parking_total > 0:
-        date_str = parking_dates[0] if parking_dates else ""
-        ws.cell(row=row, column=2, value=date_str)  # B列: 支払日
-        ws.cell(row=row, column=5, value="駐車場代")  # E列: 支払先
-        ws.cell(row=row, column=8, value="駐車場代")  # H列: 支払事由
-        ws.cell(row=row, column=19, value=parking_total)  # S列: 支払額（10%）
-        row += 1
+        ws.cell(row=10, column=19, value=parking_total)  # S10: 駐車場代合算
 
-    # その他のレコード（店舗名集計済み）
+    # その他のレコードは11行目から出力（店舗名集計済み）
+    row = 11
     for vendor_name, data in sorted(vendor_totals.items(), key=lambda x: x[1]["amount"], reverse=True):
         if row > 29:
             break
