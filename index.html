@@ -963,23 +963,11 @@
         // ステータス取得
         async function loadStatus() {
             try {
-                console.log('=== Loading status ===');
                 const res = await authFetch('/api/status');
                 const data = await res.json();
-                console.log('API response:', data);
-
                 allRecords = data.records.reverse();
-                console.log('Total records loaded:', allRecords.length);
-
-                if (allRecords.length > 0) {
-                    console.log('Sample record:', allRecords[0]);
-                    console.log('Sample image_url:', allRecords[0].image_url);
-                    console.log('Sample pdf_images:', allRecords[0].pdf_images);
-                }
-
                 checkLineStatus();
                 applyFilters();
-                console.log('=== Status loaded ===');
             } catch (e) {
                 console.error('loadStatus error:', e);
             }
@@ -1041,15 +1029,12 @@
             records.forEach(r => {
                 let allImages = [];
                 if (r.pdf_images && r.pdf_images.length > 0) {
-                    // PDFの場合はpdf_imagesを使用（空でない値のみ）
                     allImages = r.pdf_images.filter(url => url && url.trim() !== '');
                 }
                 if (allImages.length === 0 && r.image_url && r.image_url.trim() !== '') {
-                    // 通常画像の場合
                     allImages = [r.image_url];
                 }
                 window.recordImages[r.id] = allImages;
-                console.log(`Record ${r.id}: stored ${allImages.length} images`, allImages);
             });
 
             list.innerHTML = records.map((r, index) => {
@@ -1638,19 +1623,11 @@
 
         // 画像モーダル（IDから画像取得）
         function openImageModalById(recordId) {
-            console.log('=== openImageModalById called ===');
-            console.log('Record ID:', recordId);
-            console.log('window.recordImages keys:', window.recordImages ? Object.keys(window.recordImages) : 'undefined');
-
             let images = window.recordImages ? window.recordImages[recordId] : null;
-            console.log('Found images from recordImages:', images);
 
             // 画像が見つからない場合はallRecordsからフォールバック
             if (!images || images.length === 0) {
-                console.log('Trying fallback from allRecords...');
                 const record = allRecords.find(r => r.id === recordId);
-                console.log('Found record:', record);
-
                 if (record) {
                     if (record.pdf_images && record.pdf_images.length > 0) {
                         images = record.pdf_images.filter(url => url && url.trim() !== '');
@@ -1658,26 +1635,19 @@
                     if ((!images || images.length === 0) && record.image_url && record.image_url.trim() !== '') {
                         images = [record.image_url];
                     }
-                    console.log('Fallback images:', images);
                 }
             }
 
             if (images && images.length > 0) {
-                console.log('Opening modal with images:', images);
                 openImageModal(images);
             } else {
-                console.error('No valid images found for record:', recordId);
-                alert('画像が見つかりませんでした。\nRecord ID: ' + recordId);
+                alert('画像が見つかりませんでした');
             }
         }
 
         // 画像モーダル
         function openImageModal(images) {
-            console.log('=== openImageModal called ===');
-            console.log('Images array:', images);
-
             if (!images || images.length === 0) {
-                console.error('No images provided to openImageModal');
                 alert('表示する画像がありません');
                 return;
             }
@@ -1691,29 +1661,17 @@
             const pageInfo = document.getElementById('pageInfo');
             const imageContainer = document.getElementById('imageContainer');
 
-            if (!modal || !singleImage || !multiContainer || !pageInfo || !imageContainer) {
-                console.error('Modal elements not found:', { modal, singleImage, multiContainer, pageInfo, imageContainer });
-                alert('モーダル要素が見つかりません');
-                return;
-            }
-
             if (images.length === 1) {
-                console.log('Showing single image:', images[0]);
                 singleImage.src = images[0];
                 singleImage.onerror = function() {
-                    console.error('Failed to load image:', images[0]);
                     this.alt = '画像の読み込みに失敗しました';
                     this.style.minHeight = '200px';
                     this.style.background = '#333';
-                };
-                singleImage.onload = function() {
-                    console.log('Image loaded successfully');
                 };
                 singleImage.classList.remove('hidden');
                 multiContainer.classList.add('hidden');
                 pageInfo.textContent = '1 / 1';
             } else {
-                console.log('Showing multiple images:', images.length);
                 singleImage.classList.add('hidden');
                 multiContainer.classList.remove('hidden');
                 pageInfo.textContent = `全${images.length}ページ`;
@@ -1727,19 +1685,15 @@
                              class="w-full h-auto block"
                              alt="ページ ${idx + 1}"
                              style="max-height: none;"
-                             onerror="console.error('Image load error:', this.src); this.alt='読み込み失敗'; this.style.minHeight='200px'; this.style.background='#666';"
-                             onload="console.log('Multi image loaded:', ${idx + 1})">
+                             onerror="this.alt='読み込み失敗'; this.style.minHeight='200px'; this.style.background='#666';">
                     </div>
                 `).join('');
             }
 
-            // モーダルを表示
-            console.log('Making modal visible...');
             modal.classList.remove('hidden');
-            modal.style.display = 'flex'; // 念のため明示的に設定
+            modal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
             imageContainer.scrollTop = 0;
-            console.log('Modal should now be visible. Modal classes:', modal.className);
         }
 
         function showImageAtIndex(index) {
@@ -1752,11 +1706,10 @@
         function closeImageModal() {
             const modal = document.getElementById('imageModal');
             modal.classList.add('hidden');
-            modal.style.display = ''; // 明示的に設定したスタイルをリセット
+            modal.style.display = '';
             document.getElementById('multiImageContainer').innerHTML = '';
             document.getElementById('modalImage').src = '';
             document.body.style.overflow = '';
-            console.log('Modal closed');
         }
 
         // キーボード操作
