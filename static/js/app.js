@@ -1,5 +1,5 @@
 /**
- * SmartBuilder AI - メインアプリケーション
+ * 経費精算AI - メインアプリケーション
  * すべてのモジュールを統合
  */
 
@@ -69,4 +69,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-console.log('SmartBuilder AI - Application Loaded');
+console.log('経費精算AI - Application Loaded');
