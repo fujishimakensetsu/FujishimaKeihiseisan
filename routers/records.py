@@ -329,3 +329,77 @@ async def bulk_update_records(data: dict, u_id: str = Depends(get_current_user))
         "failed": failed_count,
         "update_fields": update_data
     }
+
+@router.post("/api/records/mark-exported")
+async def mark_records_exported(data: dict, u_id: str = Depends(get_current_user)):
+    """レコードを出力済みにマーク"""
+    record_ids = data.get("record_ids", [])
+
+    if not record_ids:
+        raise HTTPException(status_code=400, detail="マークするレコードが指定されていません")
+
+    print(f"=== Mark as exported ===")
+    print(f"User: {u_id}, Records: {len(record_ids)} items")
+
+    updated_count = 0
+    for record_id in record_ids:
+        try:
+            doc_ref = db.collection(config.COL_USERS).document(u_id).collection("records").document(record_id)
+            doc = doc_ref.get()
+            if doc.exists:
+                doc_ref.update({"exported": True})
+                updated_count += 1
+        except Exception as e:
+            print(f"Error marking {record_id}: {e}")
+
+    return {"message": f"{updated_count}件を出力済みにマークしました", "updated": updated_count}
+
+@router.post("/api/records/bulk-delete-exported")
+async def bulk_delete_exported(u_id: str = Depends(get_current_user)):
+    """出力済みレコードを一括削除"""
+    from services.storage_service import delete_from_gcs
+
+    print(f"=== Bulk delete exported records ===")
+    print(f"User: {u_id}")
+
+    # 出力済みレコードを取得
+    records_ref = db.collection(config.COL_USERS).document(u_id).collection("records")
+    exported_records = records_ref.where("exported", "==", True).stream()
+
+    deleted_count = 0
+    failed_count = 0
+
+    for doc in exported_records:
+        try:
+            record_data = doc.to_dict()
+
+            # GCSから画像削除
+            image_url = record_data.get("image_url", "")
+            if image_url:
+                delete_from_gcs(image_url)
+
+            # PDF画像も削除
+            if record_data.get("is_pdf") and record_data.get("pdf_images"):
+                for pdf_img_url in record_data["pdf_images"]:
+                    delete_from_gcs(pdf_img_url)
+
+            # Firestoreから削除
+            doc.reference.delete()
+            deleted_count += 1
+        except Exception as e:
+            print(f"Error deleting {doc.id}: {e}")
+            failed_count += 1
+
+    # 使用カウントを減らす
+    if deleted_count > 0:
+        db.collection(config.COL_USERS).document(u_id).update({
+            "subscription.used": firestore.Increment(-deleted_count)
+        })
+
+    print(f"Deleted: {deleted_count}, Failed: {failed_count}")
+
+    return {
+        "message": f"出力済み{deleted_count}件を削除しました",
+        "deleted": deleted_count,
+        "failed": failed_count
+    }

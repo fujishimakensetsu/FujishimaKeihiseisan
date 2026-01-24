@@ -593,6 +593,9 @@
                     <button onclick="bulkDelete()" class="px-5 py-3 rounded-xl font-medium text-sm bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors flex items-center gap-2">
                         🗑️ 一括削除
                     </button>
+                    <button onclick="bulkDeleteExported()" class="px-5 py-3 rounded-xl font-medium text-sm bg-amber-500/20 text-amber-400 border border-amber-500/30 hover:bg-amber-500/30 transition-colors flex items-center gap-2">
+                        🗑️ 出力済みを一括削除
+                    </button>
                     <button onclick="exportSelectedCSV()" class="px-5 py-3 rounded-xl font-medium text-sm bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/30 transition-colors flex items-center gap-2">
                         📊 選択分CSV
                     </button>
@@ -1092,9 +1095,10 @@
                                  onclick="openImageModalById('${r.id}')"
                                  title="クリックで拡大表示">
                             ${r.is_pdf ? '<span class="absolute -top-1 -right-1 bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-md font-medium">PDF</span>' : ''}
+                            ${r.exported ? '<span class="absolute -bottom-1 -right-1 bg-emerald-500 text-white text-xs px-1.5 py-0.5 rounded-md font-medium">済</span>' : ''}
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-xs text-adaptive-muted mb-0.5">${r.date}</p>
+                            <p class="text-xs text-adaptive-muted mb-0.5">${r.date}${r.exported ? ' <span class="text-emerald-400">✓出力済</span>' : ''}</p>
                             <p class="font-semibold text-adaptive truncate">${r.vendor_name}</p>
                             <p class="text-xs text-adaptive-secondary mt-0.5">${categoryIcon} ${r.category || 'その他'}</p>
                         </div>
@@ -1438,6 +1442,68 @@
             }
         }
 
+        // 出力済みレコードを一括削除
+        async function bulkDeleteExported() {
+            // 出力済みレコードの数を確認
+            const exportedRecords = allRecords.filter(r => r.exported);
+
+            if (exportedRecords.length === 0) {
+                alert('出力済みのレコードはありません');
+                return;
+            }
+
+            if (!confirm(`出力済み ${exportedRecords.length}件のレコードを削除しますか？\n※この操作は取り消せません`)) {
+                return;
+            }
+
+            showLoading('削除中...', `出力済み${exportedRecords.length}件を削除しています`);
+
+            try {
+                const res = await authFetch('/api/records/bulk-delete-exported', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    alert(data.message);
+                    selectedRecords.clear();
+                    if (bulkMode) toggleBulkMode();
+                    await loadStatus();
+                } else {
+                    alert('削除に失敗しました');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('削除に失敗しました');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // レコードを出力済みにマーク
+        async function markRecordsAsExported(recordIds) {
+            try {
+                const res = await authFetch('/api/records/mark-exported', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ record_ids: recordIds })
+                });
+                if (res.ok) {
+                    // allRecordsを更新
+                    allRecords = allRecords.map(r => {
+                        if (recordIds.includes(r.id)) {
+                            return { ...r, exported: true };
+                        }
+                        return r;
+                    });
+                    applyFilters(); // 表示を更新
+                }
+            } catch (e) {
+                console.error('Failed to mark records as exported:', e);
+            }
+        }
+
         // 一括編集モーダル
         function openBulkEditModal() {
             if (selectedRecords.size === 0) {
@@ -1545,6 +1611,21 @@
                 return;
             }
 
+            const recordIds = Array.from(selectedRecords);
+
+            // 既に出力済みのレコードがあるか確認
+            const exportedRecordIds = recordIds.filter(id => {
+                const record = allRecords.find(r => r.id === id);
+                return record && record.exported;
+            });
+
+            if (exportedRecordIds.length > 0) {
+                const message = `選択された${recordIds.length}件のうち${exportedRecordIds.length}件は既に出力済みです。\n再度出力してもよろしいですか？`;
+                if (!confirm(message)) {
+                    return;
+                }
+            }
+
             showLoading('CSV作成中...', `${selectedRecords.size}件のレコードをエクスポートしています`);
 
             try {
@@ -1552,7 +1633,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        record_ids: Array.from(selectedRecords)
+                        record_ids: recordIds
                     })
                 });
 
@@ -1566,6 +1647,9 @@
                     a.click();
                     document.body.removeChild(a);
                     window.URL.revokeObjectURL(url);
+
+                    // 出力成功後、レコードを出力済みにマーク
+                    await markRecordsAsExported(recordIds);
                 } else {
                     const error = await res.json();
                     alert(`エクスポートに失敗しました: ${error.detail}`);
@@ -1584,6 +1668,21 @@
                 return;
             }
 
+            const recordIds = Array.from(selectedRecords);
+
+            // 既に出力済みのレコードがあるか確認
+            const exportedRecordIds = recordIds.filter(id => {
+                const record = allRecords.find(r => r.id === id);
+                return record && record.exported;
+            });
+
+            if (exportedRecordIds.length > 0) {
+                const message = `選択された${recordIds.length}件のうち${exportedRecordIds.length}件は既に出力済みです。\n再度出力してもよろしいですか？`;
+                if (!confirm(message)) {
+                    return;
+                }
+            }
+
             showLoading('Excel作成中...', `${selectedRecords.size}件のレコードをエクスポートしています`);
 
             try {
@@ -1591,7 +1690,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        record_ids: Array.from(selectedRecords)
+                        record_ids: recordIds
                     })
                 });
 
@@ -1605,6 +1704,9 @@
                     a.click();
                     document.body.removeChild(a);
                     window.URL.revokeObjectURL(url);
+
+                    // 出力成功後、レコードを出力済みにマーク
+                    await markRecordsAsExported(recordIds);
                 } else {
                     const error = await res.json();
                     alert(`エクスポートに失敗しました: ${error.detail}`);
@@ -1623,6 +1725,21 @@
                 return;
             }
 
+            const recordIds = Array.from(selectedRecords);
+
+            // 既に出力済みのレコードがあるか確認
+            const exportedRecordIds = recordIds.filter(id => {
+                const record = allRecords.find(r => r.id === id);
+                return record && record.exported;
+            });
+
+            if (exportedRecordIds.length > 0) {
+                const message = `選択された${recordIds.length}件のうち${exportedRecordIds.length}件は既に出力済みです。\n再度出力してもよろしいですか？`;
+                if (!confirm(message)) {
+                    return;
+                }
+            }
+
             showLoading('PDF作成中...', `${selectedRecords.size}件のレコードをエクスポートしています`);
 
             try {
@@ -1630,7 +1747,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        record_ids: Array.from(selectedRecords)
+                        record_ids: recordIds
                     })
                 });
 
@@ -1644,6 +1761,9 @@
                     a.click();
                     document.body.removeChild(a);
                     window.URL.revokeObjectURL(url);
+
+                    // 出力成功後、レコードを出力済みにマーク
+                    await markRecordsAsExported(recordIds);
                 } else {
                     const error = await res.json();
                     alert(`エクスポートに失敗しました: ${error.detail}`);
@@ -1788,7 +1908,45 @@
         }
 
         async function exportExcel() {
-            window.open(`/api/export/excel?token=${TOKEN}`, '_blank');
+            // 既に出力済みのレコードがあるか確認
+            const exportedRecords = allRecords.filter(r => r.exported);
+
+            if (exportedRecords.length > 0) {
+                const message = `${allRecords.length}件のうち${exportedRecords.length}件は既に出力済みです。\n再度出力してもよろしいですか？`;
+                if (!confirm(message)) {
+                    return;
+                }
+            }
+
+            showLoading('Excel作成中...', `${allRecords.length}件のレコードをエクスポートしています`);
+
+            try {
+                const res = await authFetch('/api/export/excel');
+
+                if (res.ok) {
+                    const blob = await res.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'receipts.xlsx';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+
+                    // 出力成功後、全レコードを出力済みにマーク
+                    const allRecordIds = allRecords.map(r => r.id);
+                    await markRecordsAsExported(allRecordIds);
+                } else {
+                    const error = await res.json();
+                    alert(`エクスポートに失敗しました: ${error.detail}`);
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Excelエクスポートに失敗しました');
+            } finally {
+                hideLoading();
+            }
         }
 
         async function exportPDF() {
