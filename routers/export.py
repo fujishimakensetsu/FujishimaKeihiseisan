@@ -76,7 +76,7 @@ async def export_csv(token: Optional[str] = None, u_id: Optional[str] = Depends(
 
 @router.get("/api/export/excel")
 async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depends(get_current_user_optional)):
-    """Excel出力（テンプレート使用・店舗名集計）"""
+    """Excel出力（テンプレート使用・店舗名集計・駐車場合算・交通費別欄）"""
     import openpyxl
     from collections import defaultdict
     from datetime import datetime
@@ -99,9 +99,47 @@ async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depend
     if not records:
         raise HTTPException(status_code=404, detail="データがありません")
 
-    # 店舗名で集計（同じ店舗名の金額を合算）
-    vendor_totals = defaultdict(lambda: {"amount": 0, "dates": [], "category": ""})
+    # 駐車場キーワード
+    parking_keywords = ["駐車", "パーキング", "コインパ", "parking", "P代", "駐輪"]
+    # 公共交通機関キーワード
+    transport_keywords = ["鉄道", "電車", "JR", "バス", "地下鉄", "メトロ", "モノレール", "交通", "IC", "Suica", "PASMO", "ICOCA"]
+
+    def is_parking(record):
+        vendor = record.get("vendor_name", "").lower()
+        category = record.get("category", "").lower()
+        for kw in parking_keywords:
+            if kw.lower() in vendor or kw.lower() in category:
+                return True
+        return False
+
+    def is_transport(record):
+        vendor = record.get("vendor_name", "").lower()
+        category = record.get("category", "").lower()
+        for kw in transport_keywords:
+            if kw.lower() in vendor or kw.lower() in category:
+                return True
+        return False
+
+    # レコードを分類
+    parking_records = []
+    transport_records = []
+    other_records = []
+
     for record in records:
+        if is_parking(record):
+            parking_records.append(record)
+        elif is_transport(record):
+            transport_records.append(record)
+        else:
+            other_records.append(record)
+
+    # 駐車場代を全合算
+    parking_total = sum(r.get("total_amount", 0) for r in parking_records)
+    parking_dates = sorted([r.get("date", "") for r in parking_records if r.get("date")], reverse=True)
+
+    # その他のレコードを店舗名で集計
+    vendor_totals = defaultdict(lambda: {"amount": 0, "dates": [], "category": ""})
+    for record in other_records:
         vendor_name = record.get("vendor_name", "不明")
         amount = record.get("total_amount", 0)
         date = record.get("date", "")
@@ -121,29 +159,49 @@ async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depend
     wb = openpyxl.load_workbook(template_path)
     ws = wb.active
 
-    # データを書き込み（9行目から29行目まで、最大21件）
+    # === 経費精算欄（B-S列）にデータを書き込み ===
     row = 9
+
+    # 駐車場代を1行で出力（合算）
+    if parking_total > 0:
+        date_str = parking_dates[0] if parking_dates else ""
+        ws.cell(row=row, column=2, value=date_str)  # B列: 支払日
+        ws.cell(row=row, column=5, value="駐車場代")  # E列: 支払先
+        ws.cell(row=row, column=8, value="駐車場代")  # H列: 支払事由
+        ws.cell(row=row, column=19, value=parking_total)  # S列: 支払額（10%）
+        row += 1
+
+    # その他のレコード（店舗名集計済み）
     for vendor_name, data in sorted(vendor_totals.items(), key=lambda x: x[1]["amount"], reverse=True):
         if row > 29:
             break
 
-        # 日付（複数ある場合は最新日付を使用）
         dates = sorted(data["dates"], reverse=True)
         date_str = dates[0] if dates else ""
 
-        # B列: 支払日（セル結合されているのでB列に書き込み）
-        ws.cell(row=row, column=2, value=date_str)
-
-        # E列: 支払先（店舗名）
-        ws.cell(row=row, column=5, value=vendor_name)
-
-        # H列: 支払事由（カテゴリを使用）
-        ws.cell(row=row, column=8, value=data["category"])
-
-        # S列: 支払額（10%）- 基本的に10%として出力
-        ws.cell(row=row, column=19, value=data["amount"])
-
+        ws.cell(row=row, column=2, value=date_str)  # B列: 支払日
+        ws.cell(row=row, column=5, value=vendor_name)  # E列: 支払先
+        ws.cell(row=row, column=8, value=data["category"])  # H列: 支払事由
+        ws.cell(row=row, column=19, value=data["amount"])  # S列: 支払額（10%）
         row += 1
+
+    # === ICカード交通費欄（Z-AE列）にデータを書き込み ===
+    transport_row = 7  # 7行目から開始
+    for record in sorted(transport_records, key=lambda x: x.get("date", ""), reverse=True):
+        if transport_row > 16:  # 最大10件
+            break
+
+        date = record.get("date", "")
+        vendor = record.get("vendor_name", "")
+        amount = record.get("total_amount", 0)
+
+        ws.cell(row=transport_row, column=26, value=date)  # Z列: 利用日
+        ws.cell(row=transport_row, column=27, value=vendor)  # AA列: 利用先
+        ws.cell(row=transport_row, column=28, value="")  # AB列: 区間始まり（店舗名から推測できない場合は空）
+        ws.cell(row=transport_row, column=30, value="")  # AD列: 区間終わり
+        ws.cell(row=transport_row, column=31, value=amount)  # AE列: 利用金額
+
+        transport_row += 1
 
     # 提出日を設定（D31）
     today = datetime.now().strftime("%Y/%m/%d")
@@ -273,7 +331,7 @@ async def export_selected_csv(data: dict, u_id: str = Depends(get_current_user))
 
 @router.post("/api/export/selected/excel")
 async def export_selected_excel(data: dict, u_id: str = Depends(get_current_user)):
-    """選択したレコードのみExcel出力（テンプレート使用・店舗名集計）"""
+    """選択したレコードのみExcel出力（テンプレート使用・駐車場合算・交通費別欄）"""
     import openpyxl
     from collections import defaultdict
     from datetime import datetime
@@ -297,9 +355,47 @@ async def export_selected_excel(data: dict, u_id: str = Depends(get_current_user
     if not records:
         raise HTTPException(status_code=404, detail="データがありません")
 
-    # 店舗名で集計（同じ店舗名の金額を合算）
-    vendor_totals = defaultdict(lambda: {"amount": 0, "dates": [], "category": ""})
+    # 駐車場キーワード
+    parking_keywords = ["駐車", "パーキング", "コインパ", "parking", "P代", "駐輪"]
+    # 公共交通機関キーワード
+    transport_keywords = ["鉄道", "電車", "JR", "バス", "地下鉄", "メトロ", "モノレール", "交通", "IC", "Suica", "PASMO", "ICOCA"]
+
+    def is_parking(record):
+        vendor = record.get("vendor_name", "").lower()
+        category = record.get("category", "").lower()
+        for kw in parking_keywords:
+            if kw.lower() in vendor or kw.lower() in category:
+                return True
+        return False
+
+    def is_transport(record):
+        vendor = record.get("vendor_name", "").lower()
+        category = record.get("category", "").lower()
+        for kw in transport_keywords:
+            if kw.lower() in vendor or kw.lower() in category:
+                return True
+        return False
+
+    # レコードを分類
+    parking_records = []
+    transport_records = []
+    other_records = []
+
     for record in records:
+        if is_parking(record):
+            parking_records.append(record)
+        elif is_transport(record):
+            transport_records.append(record)
+        else:
+            other_records.append(record)
+
+    # 駐車場代を全合算
+    parking_total = sum(r.get("total_amount", 0) for r in parking_records)
+    parking_dates = sorted([r.get("date", "") for r in parking_records if r.get("date")], reverse=True)
+
+    # その他のレコードを店舗名で集計
+    vendor_totals = defaultdict(lambda: {"amount": 0, "dates": [], "category": ""})
+    for record in other_records:
         vendor_name = record.get("vendor_name", "不明")
         amount = record.get("total_amount", 0)
         date = record.get("date", "")
@@ -319,29 +415,49 @@ async def export_selected_excel(data: dict, u_id: str = Depends(get_current_user
     wb = openpyxl.load_workbook(template_path)
     ws = wb.active
 
-    # データを書き込み（9行目から29行目まで、最大21件）
+    # === 経費精算欄（B-S列）にデータを書き込み ===
     row = 9
+
+    # 駐車場代を1行で出力（合算）
+    if parking_total > 0:
+        date_str = parking_dates[0] if parking_dates else ""
+        ws.cell(row=row, column=2, value=date_str)  # B列: 支払日
+        ws.cell(row=row, column=5, value="駐車場代")  # E列: 支払先
+        ws.cell(row=row, column=8, value="駐車場代")  # H列: 支払事由
+        ws.cell(row=row, column=19, value=parking_total)  # S列: 支払額（10%）
+        row += 1
+
+    # その他のレコード（店舗名集計済み）
     for vendor_name, data in sorted(vendor_totals.items(), key=lambda x: x[1]["amount"], reverse=True):
         if row > 29:
             break
 
-        # 日付（複数ある場合は最新日付を使用）
         dates = sorted(data["dates"], reverse=True)
         date_str = dates[0] if dates else ""
 
-        # B列: 支払日
-        ws.cell(row=row, column=2, value=date_str)
-
-        # E列: 支払先（店舗名）
-        ws.cell(row=row, column=5, value=vendor_name)
-
-        # H列: 支払事由（カテゴリを使用）
-        ws.cell(row=row, column=8, value=data["category"])
-
-        # S列: 支払額（10%）
-        ws.cell(row=row, column=19, value=data["amount"])
-
+        ws.cell(row=row, column=2, value=date_str)  # B列: 支払日
+        ws.cell(row=row, column=5, value=vendor_name)  # E列: 支払先
+        ws.cell(row=row, column=8, value=data["category"])  # H列: 支払事由
+        ws.cell(row=row, column=19, value=data["amount"])  # S列: 支払額（10%）
         row += 1
+
+    # === ICカード交通費欄（Z-AE列）にデータを書き込み ===
+    transport_row = 7  # 7行目から開始
+    for record in sorted(transport_records, key=lambda x: x.get("date", ""), reverse=True):
+        if transport_row > 16:  # 最大10件
+            break
+
+        date = record.get("date", "")
+        vendor = record.get("vendor_name", "")
+        amount = record.get("total_amount", 0)
+
+        ws.cell(row=transport_row, column=26, value=date)  # Z列: 利用日
+        ws.cell(row=transport_row, column=27, value=vendor)  # AA列: 利用先
+        ws.cell(row=transport_row, column=28, value="")  # AB列: 区間始まり
+        ws.cell(row=transport_row, column=30, value="")  # AD列: 区間終わり
+        ws.cell(row=transport_row, column=31, value=amount)  # AE列: 利用金額
+
+        transport_row += 1
 
     # 提出日を設定（D31）
     today = datetime.now().strftime("%Y/%m/%d")
