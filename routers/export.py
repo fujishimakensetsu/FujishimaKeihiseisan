@@ -239,16 +239,18 @@ async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depend
 
         transport_row += 1
 
-    # 提出日を設定（D31）
+    # 提出日を設定（G31）
     today = datetime.now().strftime("%Y/%m/%d")
-    ws.cell(row=31, column=4, value=today)
+    ws.cell(row=31, column=7, value=today)
 
     # 出力ファイルを保存
     excel_path = f"{config.UPLOAD_DIR}/export_{u_id}_{int(time.time())}.xlsx"
     wb.save(excel_path)
     wb.close()
 
-    return FileResponse(excel_path, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename=f"経費精算書_{today.replace('/', '')}.xlsx")
+    # ファイル名を出力日のYYMMDD形式にする（例: 260209）
+    filename_date = datetime.now().strftime("%y%m%d")
+    return FileResponse(excel_path, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename=f"{filename_date}.xlsx")
 
 @router.get("/api/export/pdf")
 async def export_pdf(token: Optional[str] = None, u_id: Optional[str] = Depends(get_current_user_optional)):
@@ -529,16 +531,18 @@ async def export_selected_excel(data: dict, u_id: str = Depends(get_current_user
 
         transport_row += 1
 
-    # 提出日を設定（D31）
+    # 提出日を設定（G31）
     today = datetime.now().strftime("%Y/%m/%d")
-    ws.cell(row=31, column=4, value=today)
+    ws.cell(row=31, column=7, value=today)
 
     # 出力ファイルを保存
     excel_path = f"{config.UPLOAD_DIR}/export_selected_{u_id}_{int(time.time())}.xlsx"
     wb.save(excel_path)
     wb.close()
 
-    return FileResponse(excel_path, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename=f"経費精算書_{today.replace('/', '')}.xlsx")
+    # ファイル名を出力日のYYMMDD形式にする（例: 260209）
+    filename_date = datetime.now().strftime("%y%m%d")
+    return FileResponse(excel_path, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", filename=f"{filename_date}.xlsx")
 
 @router.post("/api/export/selected/pdf")
 async def export_selected_pdf(data: dict, u_id: str = Depends(get_current_user)):
