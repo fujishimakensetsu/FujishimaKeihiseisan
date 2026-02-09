@@ -45,7 +45,7 @@ jobs:
           service: ${{ env.SERVICE_NAME }}
           region: ${{ env.REGION }}
           image: "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE_NAME }}:${{ github.sha }}"
-          flags: "--allow-unauthenticated"
+          flags: "--allow-unauthenticated --min-instances=1"
           env_vars: |-
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
             LINE_CHANNEL_SECRET=${{ secrets.LINE_CHANNEL_SECRET }}
