@@ -749,8 +749,8 @@
 
     <script>
         // グローバル変数
-        let TOKEN = localStorage.getItem('token') || '';
-        let USER_ROLE = localStorage.getItem('role') || 'user';
+        let TOKEN = sessionStorage.getItem('token') || '';
+        let USER_ROLE = sessionStorage.getItem('role') || 'user';
         let isBulkMode = false;
         let selectedRecords = new Set();
         let selectedFiles = [];
@@ -822,8 +822,8 @@
 
                     TOKEN = data.access_token;
                     USER_ROLE = data.role || 'user';
-                    localStorage.setItem('token', TOKEN);
-                    localStorage.setItem('role', USER_ROLE);
+                    sessionStorage.setItem('token', TOKEN);
+                    sessionStorage.setItem('role', USER_ROLE);
 
                     document.getElementById('authOverlay').classList.add('hidden');
                     document.getElementById('mainContent').classList.remove('hidden');
@@ -834,6 +834,14 @@
                     } else {
                         document.getElementById('adminTabs').classList.add('hidden');
                         document.getElementById('adminTab').classList.add('hidden');
+                    }
+
+                    // 前回セッションのデータをクリーンアップ
+                    try {
+                        await authFetch('/api/records/all', { method: 'DELETE' });
+                        console.log('Previous session data cleaned up');
+                    } catch (e) {
+                        console.warn('Cleanup failed (may be first login):', e);
                     }
 
                     await loadStatus();
@@ -883,8 +891,8 @@
                     const data = await res.json();
                     TOKEN = data.access_token;
                     USER_ROLE = 'user';
-                    localStorage.setItem('token', TOKEN);
-                    localStorage.setItem('role', USER_ROLE);
+                    sessionStorage.setItem('token', TOKEN);
+                    sessionStorage.setItem('role', USER_ROLE);
 
                     alert('登録が完了しました！');
 
@@ -906,8 +914,8 @@
         function logout() {
             TOKEN = '';
             USER_ROLE = 'user';
-            localStorage.removeItem('token');
-            localStorage.removeItem('role');
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('role');
             document.getElementById('authOverlay').classList.remove('hidden');
             document.getElementById('mainContent').classList.add('hidden');
             document.getElementById('adminTabs').classList.add('hidden');
@@ -1993,7 +2001,7 @@
                         console.log('Token is valid, user authenticated:', data.email);
 
                         USER_ROLE = data.role || 'user';
-                        localStorage.setItem('role', USER_ROLE);
+                        sessionStorage.setItem('role', USER_ROLE);
 
                         document.getElementById('authOverlay').classList.add('hidden');
                         document.getElementById('mainContent').classList.remove('hidden');
@@ -2011,8 +2019,8 @@
                         console.warn('Token validation failed, clearing stored credentials');
                         TOKEN = '';
                         USER_ROLE = 'user';
-                        localStorage.removeItem('token');
-                        localStorage.removeItem('role');
+                        sessionStorage.removeItem('token');
+                        sessionStorage.removeItem('role');
                         document.getElementById('adminTabs').classList.add('hidden');
                         document.getElementById('adminTab').classList.add('hidden');
                         document.getElementById('authOverlay').classList.remove('hidden');
@@ -2022,8 +2030,8 @@
                     console.error('Error validating token:', e);
                     TOKEN = '';
                     USER_ROLE = 'user';
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('role');
+                    sessionStorage.removeItem('token');
+                    sessionStorage.removeItem('role');
                     document.getElementById('authOverlay').classList.remove('hidden');
                     document.getElementById('mainContent').classList.add('hidden');
                 }

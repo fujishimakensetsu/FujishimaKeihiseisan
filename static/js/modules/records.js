@@ -261,16 +261,16 @@ export async function deleteRecord(recordId, vendorName) {
  * エクスポート機能
  */
 export function exportCSV() {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     window.location.href = `/api/export/csv?token=${token}`;
 }
 
 export function exportExcel() {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     window.location.href = `/api/export/excel?token=${token}`;
 }
 
 export function exportPDF() {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     window.location.href = `/api/export/pdf?token=${token}`;
 }

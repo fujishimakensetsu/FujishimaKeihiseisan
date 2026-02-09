@@ -4,24 +4,24 @@
  */
 
 // グローバル変数
-export let TOKEN = localStorage.getItem('token') || '';
-export let USER_ROLE = localStorage.getItem('role') || 'user';
+export let TOKEN = sessionStorage.getItem('token') || '';
+export let USER_ROLE = sessionStorage.getItem('role') || 'user';
 
 export function setToken(token) {
     TOKEN = token;
-    localStorage.setItem('token', token);
+    sessionStorage.setItem('token', token);
 }
 
 export function setUserRole(role) {
     USER_ROLE = role;
-    localStorage.setItem('role', role);
+    sessionStorage.setItem('role', role);
 }
 
 export function clearAuth() {
     TOKEN = '';
     USER_ROLE = 'user';
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('role');
 }
 
 // 状態管理

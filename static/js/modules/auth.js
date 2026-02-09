@@ -68,6 +68,17 @@ export async function login() {
                 document.getElementById('adminTabs').classList.remove('hidden');
             }
 
+            // 前回セッションのデータをクリーンアップ
+            try {
+                await fetch('/api/records/all', {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${data.access_token}` }
+                });
+                console.log('Previous session data cleaned up');
+            } catch (e) {
+                console.warn('Cleanup failed (may be first login):', e);
+            }
+
             await loadStatus();
         } else {
             alert('ログインに失敗しました。メールアドレスとパスワードを確認してください。');
