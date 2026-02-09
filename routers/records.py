@@ -187,6 +187,56 @@ async def update_record(record_id: str, data: dict, u_id: str = Depends(get_curr
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"更新に失敗しました: {str(e)}")
 
+@router.delete("/api/records/all")
+async def delete_all_records(u_id: str = Depends(get_current_user)):
+    """全レコードを一括削除（セッションクリーンアップ用）"""
+    print(f"=== Delete all records ===")
+    print(f"User: {u_id}")
+
+    records_ref = db.collection(config.COL_USERS).document(u_id).collection("records")
+    all_records = records_ref.stream()
+
+    deleted_count = 0
+    failed_count = 0
+
+    for doc in all_records:
+        try:
+            record_data = doc.to_dict()
+
+            # GCSから画像削除
+            image_url = record_data.get("image_url", "")
+            if image_url:
+                delete_from_gcs(image_url)
+
+            # PDF画像も削除
+            if record_data.get("is_pdf") and record_data.get("pdf_images"):
+                for pdf_img_url in record_data["pdf_images"]:
+                    delete_from_gcs(pdf_img_url)
+
+            # Firestoreから削除
+            doc.reference.delete()
+            deleted_count += 1
+        except Exception as e:
+            print(f"Error deleting {doc.id}: {e}")
+            failed_count += 1
+
+    # 使用カウントをリセット
+    if deleted_count > 0:
+        try:
+            db.collection(config.COL_USERS).document(u_id).update({
+                "subscription.used": 0
+            })
+        except Exception as e:
+            print(f"Error resetting usage count: {e}")
+
+    print(f"Deleted: {deleted_count}, Failed: {failed_count}")
+
+    return {
+        "message": f"全{deleted_count}件のレコードを削除しました",
+        "deleted": deleted_count,
+        "failed": failed_count
+    }
+
 @router.delete("/delete/{record_id}")
 @router.delete("/api/records/{record_id}")
 async def delete_record(record_id: str, u_id: str = Depends(get_current_user)):
@@ -404,52 +454,3 @@ async def bulk_delete_exported(u_id: str = Depends(get_current_user)):
         "failed": failed_count
     }
 
-@router.delete("/api/records/all")
-async def delete_all_records(u_id: str = Depends(get_current_user)):
-    """全レコードを一括削除（セッションクリーンアップ用）"""
-    print(f"=== Delete all records ===")
-    print(f"User: {u_id}")
-
-    records_ref = db.collection(config.COL_USERS).document(u_id).collection("records")
-    all_records = records_ref.stream()
-
-    deleted_count = 0
-    failed_count = 0
-
-    for doc in all_records:
-        try:
-            record_data = doc.to_dict()
-
-            # GCSから画像削除
-            image_url = record_data.get("image_url", "")
-            if image_url:
-                delete_from_gcs(image_url)
-
-            # PDF画像も削除
-            if record_data.get("is_pdf") and record_data.get("pdf_images"):
-                for pdf_img_url in record_data["pdf_images"]:
-                    delete_from_gcs(pdf_img_url)
-
-            # Firestoreから削除
-            doc.reference.delete()
-            deleted_count += 1
-        except Exception as e:
-            print(f"Error deleting {doc.id}: {e}")
-            failed_count += 1
-
-    # 使用カウントをリセット
-    if deleted_count > 0:
-        try:
-            db.collection(config.COL_USERS).document(u_id).update({
-                "subscription.used": 0
-            })
-        except Exception as e:
-            print(f"Error resetting usage count: {e}")
-
-    print(f"Deleted: {deleted_count}, Failed: {failed_count}")
-
-    return {
-        "message": f"全{deleted_count}件のレコードを削除しました",
-        "deleted": deleted_count,
-        "failed": failed_count
-    }
