@@ -15,6 +15,27 @@ import config
 
 router = APIRouter()
 
+def wrap_text_every_n(text: str, n: int = 7) -> str:
+    """n文字ごとに改行を挿入する"""
+    if not text or len(text) <= n:
+        return text
+    return "\n".join(text[i:i+n] for i in range(0, len(text), n))
+
+def format_date_slash(date_str: str) -> str:
+    """日付をスラッシュ区切りに変換 (YYYY-MM-DD → YYYY/M/D)"""
+    if not date_str:
+        return ""
+    try:
+        parts = date_str.split("-")
+        if len(parts) == 3:
+            year = int(parts[0])
+            month = int(parts[1])
+            day = int(parts[2])
+            return f"{year}/{month}/{day}"
+    except (ValueError, IndexError):
+        pass
+    return date_str
+
 # 日本語フォント管理
 def download_japanese_font():
     """Noto Sans JPフォントをダウンロード"""
@@ -78,6 +99,7 @@ async def export_csv(token: Optional[str] = None, u_id: Optional[str] = Depends(
 async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depends(get_current_user_optional)):
     """Excel出力（テンプレート使用・店舗名集計・駐車場合算・交通費別欄）"""
     import openpyxl
+    from openpyxl.styles import Alignment
     from collections import defaultdict
     from datetime import datetime
 
@@ -175,6 +197,9 @@ async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depend
     wb = openpyxl.load_workbook(template_path)
     ws = wb.active
 
+    # B2: 年月日を6桁で入力（YYMMDD）
+    ws.cell(row=2, column=2, value=datetime.now().strftime("%y%m%d"))
+
     # === 経費精算欄にデータを書き込み ===
 
     # 駐車場代は10行目のS列のみに出力（合算金額のみ）
@@ -188,10 +213,11 @@ async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depend
             break
 
         dates = sorted(data["dates"], reverse=True)
-        date_str = dates[0] if dates else ""
+        date_str = format_date_slash(dates[0]) if dates else ""
 
         ws.cell(row=row, column=2, value=date_str)  # B列: 支払日
-        ws.cell(row=row, column=5, value=vendor_name)  # E列: 支払先
+        cell_e = ws.cell(row=row, column=5, value=wrap_text_every_n(vendor_name, 7))  # E列: 支払先
+        cell_e.alignment = Alignment(wrap_text=True, vertical="center")
         ws.cell(row=row, column=8, value=data["category"])  # H列: 支払事由
         ws.cell(row=row, column=19, value=data["amount"])  # S列: 支払額（10%）
         row += 1
@@ -371,6 +397,7 @@ async def export_selected_csv(data: dict, u_id: str = Depends(get_current_user))
 async def export_selected_excel(data: dict, u_id: str = Depends(get_current_user)):
     """選択したレコードのみExcel出力（テンプレート使用・駐車場合算・交通費別欄）"""
     import openpyxl
+    from openpyxl.styles import Alignment
     from collections import defaultdict
     from datetime import datetime
 
@@ -469,6 +496,9 @@ async def export_selected_excel(data: dict, u_id: str = Depends(get_current_user
     wb = openpyxl.load_workbook(template_path)
     ws = wb.active
 
+    # B2: 年月日を6桁で入力（YYMMDD）
+    ws.cell(row=2, column=2, value=datetime.now().strftime("%y%m%d"))
+
     # === 経費精算欄にデータを書き込み ===
 
     # 駐車場代は10行目のS列のみに出力（合算金額のみ）
@@ -482,10 +512,11 @@ async def export_selected_excel(data: dict, u_id: str = Depends(get_current_user
             break
 
         dates = sorted(data["dates"], reverse=True)
-        date_str = dates[0] if dates else ""
+        date_str = format_date_slash(dates[0]) if dates else ""
 
         ws.cell(row=row, column=2, value=date_str)  # B列: 支払日
-        ws.cell(row=row, column=5, value=vendor_name)  # E列: 支払先
+        cell_e = ws.cell(row=row, column=5, value=wrap_text_every_n(vendor_name, 7))  # E列: 支払先
+        cell_e.alignment = Alignment(wrap_text=True, vertical="center")
         ws.cell(row=row, column=8, value=data["category"])  # H列: 支払事由
         ws.cell(row=row, column=19, value=data["amount"])  # S列: 支払額（10%）
         row += 1
