@@ -99,7 +99,7 @@ async def export_csv(token: Optional[str] = None, u_id: Optional[str] = Depends(
 async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depends(get_current_user_optional)):
     """Excel出力（テンプレート使用・店舗名集計・駐車場合算・交通費別欄）"""
     import openpyxl
-    from openpyxl.styles import Alignment
+    from openpyxl.styles import Alignment, Font
     from collections import defaultdict
     from datetime import datetime
 
@@ -219,10 +219,14 @@ async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depend
         wrapped_name = wrap_text_every_n(vendor_name, 7)
         cell_e = ws.cell(row=row, column=5, value=wrapped_name)  # E列: 支払先
         cell_e.alignment = Alignment(wrap_text=True, vertical="center")
-        # 改行数に応じて行の高さを調整（見切れ防止）
+        # 行数に応じてフォントサイズを縮小（行高さは固定）
         line_count = wrapped_name.count("\n") + 1
-        if line_count > 1:
-            ws.row_dimensions[row].height = 13.5 * line_count
+        if line_count >= 4:
+            cell_e.font = cell_e.font.copy(size=5)
+        elif line_count == 3:
+            cell_e.font = cell_e.font.copy(size=6)
+        elif line_count == 2:
+            cell_e.font = cell_e.font.copy(size=7)
         ws.cell(row=row, column=8, value=data["category"])  # H列: 支払事由
         ws.cell(row=row, column=19, value=data["amount"])  # S列: 支払額（10%）
         row += 1
@@ -402,7 +406,7 @@ async def export_selected_csv(data: dict, u_id: str = Depends(get_current_user))
 async def export_selected_excel(data: dict, u_id: str = Depends(get_current_user)):
     """選択したレコードのみExcel出力（テンプレート使用・駐車場合算・交通費別欄）"""
     import openpyxl
-    from openpyxl.styles import Alignment
+    from openpyxl.styles import Alignment, Font
     from collections import defaultdict
     from datetime import datetime
 
@@ -523,10 +527,14 @@ async def export_selected_excel(data: dict, u_id: str = Depends(get_current_user
         wrapped_name = wrap_text_every_n(vendor_name, 7)
         cell_e = ws.cell(row=row, column=5, value=wrapped_name)  # E列: 支払先
         cell_e.alignment = Alignment(wrap_text=True, vertical="center")
-        # 改行数に応じて行の高さを調整（見切れ防止）
+        # 行数に応じてフォントサイズを縮小（行高さは固定）
         line_count = wrapped_name.count("\n") + 1
-        if line_count > 1:
-            ws.row_dimensions[row].height = 13.5 * line_count
+        if line_count >= 4:
+            cell_e.font = cell_e.font.copy(size=5)
+        elif line_count == 3:
+            cell_e.font = cell_e.font.copy(size=6)
+        elif line_count == 2:
+            cell_e.font = cell_e.font.copy(size=7)
         ws.cell(row=row, column=8, value=data["category"])  # H列: 支払事由
         ws.cell(row=row, column=19, value=data["amount"])  # S列: 支払額（10%）
         row += 1
