@@ -221,12 +221,13 @@ async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depend
         cell_e.alignment = Alignment(wrap_text=True, vertical="center")
         # 行数に応じてフォントサイズを縮小（行高さは固定）
         line_count = wrapped_name.count("\n") + 1
+        orig = cell_e.font
         if line_count >= 4:
-            cell_e.font = cell_e.font.copy(size=5)
+            cell_e.font = Font(name=orig.name, size=5, bold=orig.bold, italic=orig.italic, color=orig.color)
         elif line_count == 3:
-            cell_e.font = cell_e.font.copy(size=6)
+            cell_e.font = Font(name=orig.name, size=6, bold=orig.bold, italic=orig.italic, color=orig.color)
         elif line_count == 2:
-            cell_e.font = cell_e.font.copy(size=7)
+            cell_e.font = Font(name=orig.name, size=7, bold=orig.bold, italic=orig.italic, color=orig.color)
         ws.cell(row=row, column=8, value=data["category"])  # H列: 支払事由
         ws.cell(row=row, column=19, value=data["amount"])  # S列: 支払額（10%）
         row += 1
@@ -529,12 +530,13 @@ async def export_selected_excel(data: dict, u_id: str = Depends(get_current_user
         cell_e.alignment = Alignment(wrap_text=True, vertical="center")
         # 行数に応じてフォントサイズを縮小（行高さは固定）
         line_count = wrapped_name.count("\n") + 1
+        orig = cell_e.font
         if line_count >= 4:
-            cell_e.font = cell_e.font.copy(size=5)
+            cell_e.font = Font(name=orig.name, size=5, bold=orig.bold, italic=orig.italic, color=orig.color)
         elif line_count == 3:
-            cell_e.font = cell_e.font.copy(size=6)
+            cell_e.font = Font(name=orig.name, size=6, bold=orig.bold, italic=orig.italic, color=orig.color)
         elif line_count == 2:
-            cell_e.font = cell_e.font.copy(size=7)
+            cell_e.font = Font(name=orig.name, size=7, bold=orig.bold, italic=orig.italic, color=orig.color)
         ws.cell(row=row, column=8, value=data["category"])  # H列: 支払事由
         ws.cell(row=row, column=19, value=data["amount"])  # S列: 支払額（10%）
         row += 1
