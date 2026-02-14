@@ -216,8 +216,13 @@ async def export_excel(token: Optional[str] = None, u_id: Optional[str] = Depend
         date_str = format_date_slash(dates[0]) if dates else ""
 
         ws.cell(row=row, column=2, value=date_str)  # B列: 支払日
-        cell_e = ws.cell(row=row, column=5, value=wrap_text_every_n(vendor_name, 7))  # E列: 支払先
+        wrapped_name = wrap_text_every_n(vendor_name, 7)
+        cell_e = ws.cell(row=row, column=5, value=wrapped_name)  # E列: 支払先
         cell_e.alignment = Alignment(wrap_text=True, vertical="center")
+        # 改行数に応じて行の高さを調整（見切れ防止）
+        line_count = wrapped_name.count("\n") + 1
+        if line_count > 1:
+            ws.row_dimensions[row].height = 13.5 * line_count
         ws.cell(row=row, column=8, value=data["category"])  # H列: 支払事由
         ws.cell(row=row, column=19, value=data["amount"])  # S列: 支払額（10%）
         row += 1
@@ -515,8 +520,13 @@ async def export_selected_excel(data: dict, u_id: str = Depends(get_current_user
         date_str = format_date_slash(dates[0]) if dates else ""
 
         ws.cell(row=row, column=2, value=date_str)  # B列: 支払日
-        cell_e = ws.cell(row=row, column=5, value=wrap_text_every_n(vendor_name, 7))  # E列: 支払先
+        wrapped_name = wrap_text_every_n(vendor_name, 7)
+        cell_e = ws.cell(row=row, column=5, value=wrapped_name)  # E列: 支払先
         cell_e.alignment = Alignment(wrap_text=True, vertical="center")
+        # 改行数に応じて行の高さを調整（見切れ防止）
+        line_count = wrapped_name.count("\n") + 1
+        if line_count > 1:
+            ws.row_dimensions[row].height = 13.5 * line_count
         ws.cell(row=row, column=8, value=data["category"])  # H列: 支払事由
         ws.cell(row=row, column=19, value=data["amount"])  # S列: 支払額（10%）
         row += 1
